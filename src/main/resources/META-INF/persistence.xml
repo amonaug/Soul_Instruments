@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<persistence version="3.0" xmlns="https://jakarta.ee/xml/ns/persistence"
+             xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+             xsi:schemaLocation="https://jakarta.ee/xml/ns/persistence https://jakarta.ee/xml/ns/persistence/persistence_3_0.xsd">
+    <persistence-unit name="SoulInstrumentsPU" transaction-type="RESOURCE_LOCAL"> <provider>org.hibernate.jpa.HibernatePersistenceProvider</provider>
+
+        <class>com.soulinstruments.model.Instrumento</class>
+        <class>com.soulinstruments.model.Produto</class>
+        <class>com.soulinstruments.model.Fornecedor</class>
+        <class>com.soulinstruments.model.Pedido</class>
+        <class>com.soulinstruments.model.ItemPedido</class>
+        <class>com.soulinstruments.model.Categoria</class> <properties>
+            <property name="jakarta.persistence.jdbc.driver" value="org.postgresql.Driver"/>
+            <property name="jakarta.persistence.jdbc.url" value="jdbc:postgresql://localhost:5432/soul_instruments_db"/>
+            <property name="jakarta.persistence.jdbc.user" value="postgres"/>
+            <property name="jakarta.persistence.jdbc.password" value="sua_senha_aqui"/>
+
+            <property name="hibernate.dialect" value="org.hibernate.dialect.PostgreSQLDialect"/>
+
+            <property name="hibernate.show_sql" value="true"/> <property name="hibernate.format_sql" value="true"/> <property name="hibernate.hbm2ddl.auto" value="update"/> </properties>
+    </persistence-unit>
+</persistence>
