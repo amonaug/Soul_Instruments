@@ -1,17 +1,21 @@
 package com.roncolatoandpedro.soulinstruments.main;
 
-//TIP To <b>Run</b> code, press <shortcut actionId="Run"/> or
-// click the <icon src="AllIcons.Actions.Execute"/> icon in the gutter.
+import com.roncolatoandpedro.soulinstruments.guice.AppModule;
+import com.roncolatoandpedro.soulinstruments.ui.*;
+import com.google.inject.Guice;
+import com.google.inject.Injector;
+
+import javax.swing.SwingUtilities;
+
 public class Main {
     public static void main(String[] args) {
-        //TIP Press <shortcut actionId="ShowIntentionActions"/> with your caret at the highlighted text
-        // to see how IntelliJ IDEA suggests fixing it.
-        System.out.printf("Hello and welcome!");
+        Injector injector = Guice.createInjector(new AppModule());
 
-        for (int i = 1; i <= 5; i++) {
-            //TIP Press <shortcut actionId="Debug"/> to start debugging your code. We have set one <icon src="AllIcons.Debugger.Db_set_breakpoint"/> breakpoint
-            // for you, but you can always add more by pressing <shortcut actionId="ToggleLineBreakpoint"/>.
-            System.out.println("i = " + i);
-        }
+        SwingUtilities.invokeLater(() {
+            JanelaPrincipal janelaPrincipal = injector.getInstance(JanelaPrincipal.class);
+            janelaPrincipal.setVisible(true);
+        });
+
+
     }
 }
