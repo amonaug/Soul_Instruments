@@ -1,4 +1,4 @@
-package com.roncolatoandpedro.soulinstruments.model;
+package com.roncolatoandpedro.soulinstruments.dto;
 
 public enum Categoria {
     CORDAS, PERCUSSAO, SOPRO, ELETRONICO;
