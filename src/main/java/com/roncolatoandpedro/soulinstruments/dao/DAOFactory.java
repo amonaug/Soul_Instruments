@@ -1,4 +1,4 @@
 package com.roncolatoandpedro.soulinstruments.dao;
 
-public class ItemPedidoDAO {
+public class DAOFactory {
 }

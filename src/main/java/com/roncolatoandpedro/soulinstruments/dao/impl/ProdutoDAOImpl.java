@@ -2,7 +2,7 @@ package com.roncolatoandpedro.soulinstruments.dao.impl;
 
 import com.google.inject.Inject;
 import com.google.inject.Provider; // Importante para gerenciar o ciclo de vida do EntityManager
-import com.roncolatoandpedro.soulinstruments.dao.ProdutoDAO;
+import com.roncolatoandpedro.soulinstruments.dao.interfaces.ProdutoDAO;
 import com.roncolatoandpedro.soulinstruments.model.Produto;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityTransaction;

@@ -2,15 +2,8 @@ package com.roncolatoandpedro.soulinstruments.dao.impl;
 
 import com.google.inject.Inject;
 import com.google.inject.Provider; // Importante para gerenciar o ciclo de vida do EntityManager
-import com.roncolatoandpedro.soulinstruments.dao.ItemPedidoDAO;
-import com.roncolatoandpedro.soulinstruments.model.ItemPedido;
+import com.roncolatoandpedro.soulinstruments.dao.interfaces.ItemPedidoDAO;
 import jakarta.persistence.EntityManager;
-import jakarta.persistence.EntityTransaction;
-import jakarta.persistence.NoResultException;
-import jakarta.persistence.TypedQuery;
-
-import java.util.List;
-import java.util.Optional;
 
 
 public class ItemPedidoDAOImpl implements ItemPedidoDAO {

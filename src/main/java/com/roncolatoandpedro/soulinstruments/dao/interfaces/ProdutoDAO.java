@@ -1,4 +1,4 @@
-package com.roncolatoandpedro.soulinstruments.dao;
+package com.roncolatoandpedro.soulinstruments.dao.interfaces;
 
 import com.roncolatoandpedro.soulinstruments.model.Produto; // Sua entidade Produto
 import java.util.List;

@@ -1,0 +1,53 @@
+<project name="SoulInstrumentsApp" default="jar" basedir=".">
+
+    <property name="app.name" value="SoulInstrumentsApp"/>
+    <property name="src.dir" location="src/main/java"/> <property name="build.dir" location="build"/>
+    <property name="dist.dir" location="dist"/>
+    <property name="lib.dir" location="lib"/>
+    <property name="main.class" value="com.soulinstruments.Main"/> <property name="jdbc.driver.jar" value="postgresql-42.7.3.jar"/> <path id="classpath">
+    <fileset dir="${lib.dir}">
+        <include name="${jdbc.driver.jar}"/>
+    </fileset>
+    <pathelement location="${build.dir}"/> </path>
+
+    <target name="clean" description="Limpa os diretórios de build e distribuição">
+        <delete dir="${build.dir}"/>
+        <delete dir="${dist.dir}"/>
+    </target>
+
+    <target name="init" description="Cria os diretórios necessários">
+        <mkdir dir="${build.dir}"/>
+        <mkdir dir="${dist.dir}"/>
+        <mkdir dir="${dist.dir}/lib"/> </target>
+
+    <target name="compile" depends="init" description="Compila o código fonte Java">
+        <javac srcdir="${src.dir}" destdir="${build.dir}" classpathref="classpath" includeantruntime="false">
+            <compilerarg value="-Xlint:all"/> </javac>
+    </target>
+
+    <target name="jar" depends="compile" description="Gera o arquivo .jar executável">
+        <jar destfile="${dist.dir}/${app.name}.jar" basedir="${build.dir}">
+            <manifest>
+                <attribute name="Main-Class" value="${main.class}"/>
+                <attribute name="Class-Path" value="lib/${jdbc.driver.jar}"/> </manifest>
+        </jar>
+        <copy file="${lib.dir}/${jdbc.driver.jar}" todir="${dist.dir}/lib"/>
+    </target>
+
+    <target name="run" depends="jar" description="Executa a aplicação a partir do JAR">
+        <java jar="${dist.dir}/${app.name}.jar" fork="true">
+            <classpath>
+                <path refid="classpath"/>
+            </classpath>
+        </java>
+    </target>
+
+    <target name="run-class" depends="compile" description="Executa a aplicação (sem JAR)">
+        <java classname="${main.class}" fork="true">
+            <classpath>
+                <path refid="classpath"/>
+            </classpath>
+        </java>
+    </target>
+
+</project>
