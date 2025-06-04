@@ -7,19 +7,17 @@ import java.util.List;
 public class PedidoDTO {
     private Long idPedido;
     private LocalDate dataPedido;
-    private LocalDate dataEntrega;
     private Double valorTotal; //Pode ser calculado ou armazenado
-    private Long fornecedorId; //FK
+    private String cnpj; //FK
     private List<ItemPedidoDTO> itens;
 
     public PedidoDTO() {}
 
-    public PedidoDTO(Long idPedido, LocalDate dataPedido, LocalDate dataEntrega, Double valorTotal, Long fornecedorId) {
+    public PedidoDTO(Long idPedido, LocalDate dataPedido, Double valorTotal, String cnpj) {
         this.idPedido = idPedido;
         this.dataPedido = dataPedido;
-        this.dataEntrega = dataEntrega;
         this.valorTotal = valorTotal;
-        this.fornecedorId = fornecedorId;
+        this.cnpj = cnpj;
         this.itens = new ArrayList<>();
     }
 
@@ -39,14 +37,6 @@ public class PedidoDTO {
         this.dataPedido = dataPedido;
     }
 
-    public LocalDate getDataEntrega() {
-        return dataEntrega;
-    }
-
-    public void setDataEntrega(LocalDate dataEntrega) {
-        this.dataEntrega = dataEntrega;
-    }
-
     public Double getValorTotal() {
         return valorTotal;
     }
@@ -55,12 +45,12 @@ public class PedidoDTO {
         this.valorTotal = valorTotal;
     }
 
-    public Long getFornecedorId() {
-        return fornecedorId;
+    public String getFornecedorId() {
+        return cnpj;
     }
 
-    public void setFornecedorId(Long fornecedorId) {
-        this.fornecedorId = fornecedorId;
+    public void setFornecedorId(String fornecedorId) {
+        this.cnpj = fornecedorId;
     }
 
     public List<ItemPedidoDTO> getItens() {

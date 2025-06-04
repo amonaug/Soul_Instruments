@@ -7,7 +7,9 @@ public class InstrumentoDTO {
     private String nome;
     private Categoria categoria;
 
-    public InstrumentoDTO() {
+    public InstrumentoDTO(String nome, Categoria categoria) {
+        this.nome = nome;
+        this.categoria = categoria;
     }
 
     public InstrumentoDTO(Long id, String nome, Categoria categoria) {

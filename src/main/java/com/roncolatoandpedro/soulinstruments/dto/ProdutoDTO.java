@@ -3,30 +3,35 @@ package com.roncolatoandpedro.soulinstruments.dto;
 import com.roncolatoandpedro.soulinstruments.dto.Categoria;
 
 public class ProdutoDTO extends InstrumentoDTO {
-    private String codigoProduto;
+    private int codigoProduto;
     private String marca;
     private String modelo;
-    private String descricao;
     private Double preco;
     private int quantidadeEstoque;
-    private Long fornecedorId;
+    private String cnpj;
 
     // Construtor padrão
-    public ProdutoDTO() {
-        super();
+    public ProdutoDTO(Long id, String nome, Categoria categoria, String marca, String modelo,
+                      Double preco, int quantidadeEstoque, String cnpj
+                      ) {
+        super(id, nome, categoria);
+        this.marca = marca;
+        this.modelo = modelo;
+        this.preco = preco;
+        this.quantidadeEstoque = quantidadeEstoque;
+        this.cnpj = cnpj;
     }
 
     // Construtor completo
-    public ProdutoDTO(Long id, String nome, Categoria categoria, String codigoProduto, String marca, String modelo,
-                      String descricao, Double preco, int quantidadeEstoque, Long fornecedorId) {
+    public ProdutoDTO(Long id, String nome, Categoria categoria, int codigoProduto, String marca, String modelo,
+                      Double preco, int quantidadeEstoque, String cnpj) {
         super(id, nome, categoria); // Chama o construtor da superclasse InstrumentoDTO
         this.codigoProduto = codigoProduto;
         this.marca = marca;
         this.modelo = modelo;
-        this.descricao = descricao;
         this.preco = preco;
         this.quantidadeEstoque = quantidadeEstoque;
-        this.fornecedorId = fornecedorId;
+        this.cnpj = cnpj;
     }
 
     // Getters e Setters para os campos específicos de ProdutoDTO
@@ -34,7 +39,7 @@ public class ProdutoDTO extends InstrumentoDTO {
         return codigoProduto;
     }
 
-    public void setCodigoProduto(String codigoProduto) {
+    public void setCodigoProduto(int codigoProduto) {
         this.codigoProduto = codigoProduto;
     }
 
@@ -54,13 +59,6 @@ public class ProdutoDTO extends InstrumentoDTO {
         this.modelo = modelo;
     }
 
-    public String getDescricao() {
-        return descricao;
-    }
-
-    public void setDescricao(String descricao) {
-        this.descricao = descricao;
-    }
 
     public Double getPreco() {
         return preco;
@@ -78,11 +76,4 @@ public class ProdutoDTO extends InstrumentoDTO {
         this.quantidadeEstoque = quantidadeEstoque;
     }
 
-    public Long getFornecedorId() {
-        return fornecedorId;
-    }
-
-    public void setFornecedorId(Long fornecedorId) {
-        this.fornecedorId = fornecedorId;
-    }
 }

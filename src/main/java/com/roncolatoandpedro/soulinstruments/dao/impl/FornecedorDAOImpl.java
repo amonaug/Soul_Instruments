@@ -1,127 +1,28 @@
 package com.roncolatoandpedro.soulinstruments.dao.impl;
 
-import com.google.inject.Inject;
-import com.google.inject.Provider; // Importante para gerenciar o ciclo de vida do EntityManager
 import com.roncolatoandpedro.soulinstruments.dao.interfaces.FornecedorDAO;
-import com.roncolatoandpedro.soulinstruments.model.Fornecedor;
-import jakarta.persistence.EntityManager;
-import jakarta.persistence.EntityTransaction;
+import com.roncolatoandpedro.soulinstruments.dto.FornecedorDTO;
+import com.sun.jdi.ClassNotPreparedException;
+import org.postgresql.core.ConnectionFactory;
 
-import java.util.Optional;
-
+import java.sql.*;
+import java.sql.PreparedStatement;
 
 public class FornecedorDAOImpl implements FornecedorDAO {
+    private final Connection connection;
 
-    private final Provider<EntityManager> entityManagerProvider;
-    @Inject
-    public FornecedorDAOImplImpl(Provider<EntityManager> entityManagerProvider) {
-        this.entityManagerProvider = entityManagerProvider;
-    }
-
-    private EntityManager getEntityManager() {
-        return entityManagerProvider.get(); // Obtém uma instância do EntityManager
+    public FornecedorDAOImpl(Connection connection) {
+        this.connection = connection;
     }
 
     @Override
-    public void salvar(Fornecedor fornecedor) {
-        EntityManager em = getEntityManager();
-        EntityTransaction tx = null;
-        try {
-            tx = em.getTransaction();
-            tx.begin();
-            em.persist(fornecedor);
-            tx.commit();
-        } catch (RuntimeException e) {
-            if (tx != null && tx.isActive()) {
-                tx.rollback();
-            }
-            throw e; // Re-lança a exceção para ser tratada pela camada superior
-        } finally {
-            if (em != null) {
-                em.close(); // Sempre feche o EntityManager obtido do Provider
-            }
+    public void salvar(FornecedorDTO fornecedor) throws Exception{
+        String sql = "INSERT INTO fornecedor (nome, cnpj, email) VALUES (?, ?, ?)";
+        try(PreparedStatement stmt = connection.prepareStatement(sql)){
+            stmt.setString(1, fornecedor.getNomeFornecedor());
+            stmt.setString(2, fornecedor.getCnpj());
+            stmt.setString(3, fornecedor.getEmail());
+            stmt.executeUpdate();
         }
     }
-
-    @Override
-    public void atualizar(Fornecedor fornecedor) {
-        EntityManager em = getEntityManager();
-        EntityTransaction tx = null;
-        try {
-            tx = em.getTransaction();
-            tx.begin();
-            em.merge(fornecedor); // Use merge para atualizar entidades existentes
-            tx.commit();
-        } catch (RuntimeException e) {
-            if (tx != null && tx.isActive()) {
-                tx.rollback();
-            }
-            throw e;
-        } finally {
-            if (em != null) {
-                em.close();
-            }
-        }
-    }
-
-    @Override
-    public void atualizar(Fornecedor fornecedor) {
-        EntityManager em = getEntityManager();
-        EntityTransaction tx = null;
-        try {
-            tx = em.getTransaction();
-            tx.begin();
-            em.merge(fornecedor); // Use merge para atualizar entidades existentes
-            tx.commit();
-        } catch (RuntimeException e) {
-            if (tx != null && tx.isActive()) {
-                tx.rollback();
-            }
-            throw e;
-        } finally {
-            if (em != null) {
-                em.close();
-            }
-        }
-    }
-
-    @Override
-    public void remover(Long id) {
-        EntityManager em = getEntityManager();
-        EntityTransaction tx = null;
-        try {
-            tx = em.getTransaction();
-            tx.begin();
-            Fornecedor fornecedor = em.find(fornecedor.class, id);
-            if (fornecedor != null) {
-                em.remove(fornecedor);
-            }
-            tx.commit();
-        } catch (RuntimeException e) {
-            if (tx != null && tx.isActive()) {
-                tx.rollback();
-            }
-            throw e;
-        } finally {
-            if (em != null) {
-                em.close();
-            }
-        }
-    }
-
-    @Override
-    public Optional<Fornecedor> buscarPorCnpj(Long id) {
-        EntityManager em = getEntityManager();
-        try {
-            return Optional.ofNullable(em.find(Fornecedor.class, cnpj));
-        } finally {
-            if (em != null) {
-                em.close();
-            }
-        }
-    }
-
-
-
-
 }
