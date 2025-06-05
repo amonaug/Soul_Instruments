@@ -1,135 +1,91 @@
 package com.roncolatoandpedro.soulinstruments.dao.impl;
 
-import com.google.inject.Inject;
-import com.google.inject.Provider; // Importante para gerenciar o ciclo de vida do EntityManager
 import com.roncolatoandpedro.soulinstruments.dao.interfaces.ProdutoDAO;
-import com.roncolatoandpedro.soulinstruments.model.Produto;
-import jakarta.persistence.EntityManager;
-import jakarta.persistence.EntityTransaction;
-import jakarta.persistence.NoResultException;
-import jakarta.persistence.TypedQuery;
+import com.roncolatoandpedro.soulinstruments.dto.ProdutoDTO;
+import com.roncolatoandpedro.soulinstruments.dto.Categoria;
 
+import java.sql.*;
 import java.util.List;
+import java.util.ArrayList;
 import java.util.Optional;
 
 public class ProdutoDAOImpl implements ProdutoDAO {
+    private final Connection conexao;
 
-    private final Provider<EntityManager> entityManagerProvider;
-
-    @Inject
-    public ProdutoDAOImpl(Provider<EntityManager> entityManagerProvider) {
-        this.entityManagerProvider = entityManagerProvider;
+    public ProdutoDAOImpl(Connection conexao) {
+        this.conexao = conexao;
     }
 
-    private EntityManager getEntityManager() {
-        return entityManagerProvider.get(); // Obtém uma instância do EntityManager
-    }
 
     @Override
-    public void salvar(Produto produto) {
-        EntityManager em = getEntityManager();
-        EntityTransaction tx = null;
-        try {
-            tx = em.getTransaction();
-            tx.begin();
-            em.persist(produto);
-            tx.commit();
-        } catch (RuntimeException e) {
-            if (tx != null && tx.isActive()) {
-                tx.rollback();
+    public ProdutoDTO salvar(ProdutoDTO produto) {
+        String sql = "INSERT INTO produto (nome, categoria, codigo_produto, marca, modelo, descricao, preco, quantidade_estoque, fornecedor_id)" +
+                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
+
+        try (PreparedStatement stmt = conexao.prepareStatement (sql, Statement.RETURN_GENERATED_KEYS)) {
+            stmt.setString(1, produto.getNome());
+            stmt.setString(2, produto.getCategoria().name());
+            stmt.setString(3, produto.getCodigoProduto());
+            stmt.setString(4, produto.getMarca());
+            stmt.setString(5, produto.getModelo());
+            stmt.setString(6, produto.getDescricao());
+            stmt.setInt(7, produto.getQuantidadeEstoque());
+            stmt.setDouble(8, produto.getPreco());
+
+            if(produto.getFornecedorId() == null){
+                stmt.setLong(9, produto.getFornecedorId());
+            } else {
+                stmt.setNull(9, java.sql.Types.BIGINT);
             }
-            throw e; // Re-lança a exceção para ser tratada pela camada superior
-        } finally {
-            if (em != null) {
-                em.close(); // Sempre feche o EntityManager obtido do Provider
+
+            int affectedRows = stmt.executeUpdate();
+
+            if (affectedRows == 0) {
+                try (ResultSet generatedKeys = stmt.getGeneratedKeys()) {
+                    if (generatedKeys.next()){
+                        produto.setId(generatedKeys.getLong(1)); //define o ID gerado para o produto
+                    } else {
+                        throw new SQLException("Falha ao obter ID gerado para o produto");
+                    }
+                }
+            } else {
+                throw new SQLException("Falha ao salvar Produto, nenhuma linha afetada");
             }
+            return produto;
         }
     }
 
     @Override
-    public void atualizar(Produto produto) {
-        EntityManager em = getEntityManager();
-        EntityTransaction tx = null;
-        try {
-            tx = em.getTransaction();
-            tx.begin();
-            em.merge(produto); // Use merge para atualizar entidades existentes
-            tx.commit();
-        } catch (RuntimeException e) {
-            if (tx != null && tx.isActive()) {
-                tx.rollback();
+    public ProdutoDTO atualizar(ProdutoDTO produto){
+        String sql = "UPDATE produto SET nome = ?, categoria = ?, codigo_produto = ?, marca = ?, modelo = ?, descricao = ?, " +
+                "preco = ?, quantidade_estoque = ?, fornecedor_id = ? WHERE id = ?";
+
+        try (PreparedStatement stmt = conexao.prepareStatement(sql)) {
+            stmt.setString(1, produto.getNome());
+            stmt.setString(2, produto.getCategoria().name());
+            stmt.setString(3, produto.getCodigoProduto());
+            stmt.setString(4, produto.getMarca());
+            stmt.setString(5, produto.getModelo());
+            stmt.setString(6, produto.getDescricao());
+            stmt.setInt(7, produto.getQuantidadeEstoque());
+            stmt.setDouble(8, produto.getPreco());
+            if (produto.getFornecedorId() == null) {
+                stmt.setLong(9, produto.getFornecedorId());
+            } else {
+                stmt.setNull(9, java.sql.Types.BIGINT);
             }
-            throw e;
-        } finally {
-            if (em != null) {
-                em.close();
-            }
+            stmt.setLong(10, produto.getId());
+
+            stmt.executeUpdate();
         }
     }
 
-    @Override
-    public void remover(Long id) {
-        EntityManager em = getEntityManager();
-        EntityTransaction tx = null;
-        try {
-            tx = em.getTransaction();
-            tx.begin();
-            Produto produto = em.find(Produto.class, id);
-            if (produto != null) {
-                em.remove(produto);
-            }
-            tx.commit();
-        } catch (RuntimeException e) {
-            if (tx != null && tx.isActive()) {
-                tx.rollback();
-            }
-            throw e;
-        } finally {
-            if (em != null) {
-                em.close();
-            }
-        }
-    }
 
     @Override
-    public Optional<Produto> buscarPorId(Long id) {
-        EntityManager em = getEntityManager();
-        try {
-            return Optional.ofNullable(em.find(Produto.class, id));
-        } finally {
-            if (em != null) {
-                em.close();
-            }
-        }
+    public ProdutoDTO deletar(ProdutoDTO produto){
+        String sql = "DELETE FROM produto WHERE id = ?";
     }
 
-    @Override
-    public Optional<Produto> buscarPorCodigoProduto(String codigoProduto) {
-        EntityManager em = getEntityManager();
-        try {
-            TypedQuery<Produto> query = em.createQuery(
-                    "SELECT p FROM Produto p WHERE p.codigoProduto = :codigo", Produto.class);
-            query.setParameter("codigo", codigoProduto);
-            return Optional.ofNullable(query.getSingleResult());
-        } catch (NoResultException e) {
-            return Optional.empty();
-        } finally {
-            if (em != null) {
-                em.close();
-            }
-        }
-    }
 
-    @Override
-    public List<Produto> listarTodos() {
-        EntityManager em = getEntityManager();
-        try {
-            TypedQuery<Produto> query = em.createQuery("SELECT p FROM Produto p", Produto.class);
-            return query.getResultList();
-        } finally {
-            if (em != null) {
-                em.close();
-            }
-        }
-    }
+
 }

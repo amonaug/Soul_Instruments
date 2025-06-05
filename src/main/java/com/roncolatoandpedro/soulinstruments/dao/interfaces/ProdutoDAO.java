@@ -1,15 +1,18 @@
 package com.roncolatoandpedro.soulinstruments.dao.interfaces;
 
-import com.roncolatoandpedro.soulinstruments.model.Produto; // Sua entidade Produto
+import com.roncolatoandpedro.soulinstruments.dto.ProdutoDTO; // Sua entidade Produto
+import com.roncolatoandpedro.soulinstruments.dto.Categoria;
+
+import java.sql.SQLException
 import java.util.List;
 import java.util.Optional;
 
 public interface ProdutoDAO {
-    void salvar(Produto produto);
-    void atualizar(Produto produto);
-    void remover(Long id);
-    Optional<Produto> buscarPorId(Long id);
-    Optional<Produto> buscarPorCodigoProduto(String codigoProduto);
-    List<Produto> listarTodos();
-    // Adicione outros métodos específicos conforme necessário (ex: buscarPorCategoria)
+    ProdutoDTO salvar(ProdutoDTO produto) throws SQLException; //Retornar o DTO com ID permite que retore o objeto por completo após a persistência
+    void atualizar(ProdutoDTO produto) throws SQLException;
+    void remover(Long id) ;
+    Optional<ProdutoDTO> buscarPorId(Long id) throws SQLException;
+    Optional<ProdutoDTO> buscarPorCodigoProduto(String codigoProduto) throws SQLException;
+    List<ProdutoDTO> listarTodos() throws SQLException;
+    List<ProdutoDTO> listarCategoria(Categoria categoria) throws SQLException;
 }
