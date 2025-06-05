@@ -18,7 +18,7 @@ public class ProdutoDAOImpl implements ProdutoDAO {
 
 
     @Override
-    public ProdutoDTO salvar(ProdutoDTO produto) {
+    public ProdutoDTO salvar(ProdutoDTO produto) throws SQLException{
         String sql = "INSERT INTO produto (nome, categoria, codigo_produto, marca, modelo, descricao, preco, quantidade_estoque, fornecedor_id)" +
                 "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
@@ -56,7 +56,7 @@ public class ProdutoDAOImpl implements ProdutoDAO {
     }
 
     @Override
-    public ProdutoDTO atualizar(ProdutoDTO produto){
+    public void atualizar(ProdutoDTO produto) throws SQLException{
         String sql = "UPDATE produto SET nome = ?, categoria = ?, codigo_produto = ?, marca = ?, modelo = ?, descricao = ?, " +
                 "preco = ?, quantidade_estoque = ?, fornecedor_id = ? WHERE id = ?";
 
@@ -82,10 +82,89 @@ public class ProdutoDAOImpl implements ProdutoDAO {
 
 
     @Override
-    public ProdutoDTO deletar(ProdutoDTO produto){
+    public void deletar(Long id) throws SQLException{
         String sql = "DELETE FROM produto WHERE id = ?";
+        try (PreparedStatement stmt = conexao.prepareStatement(sql)) {
+            stmt.setLong(1, id);
+            stmt.executeUpdate();
+        }
     }
 
 
 
+
+
+    private ProdutoDTO mapearResultSetParaProdutoDTO(ResultSet resultSet) throws SQLException {
+        Long id = resultSet.getLong("id");
+        String nome = resultSet.getString("nome");
+        Categoria categoria = Categoria.valueOf(resultSet.getString("categoria"));
+        String codigoProduto = resultSet.getString("codigo_produto");
+        String marca = resultSet.getString("marca");
+        String modelo = resultSet.getString("modelo");
+        String descricao = resultSet.getString("descricao");
+        int quantidadeEstoque = resultSet.getInt("quantidadeEstoque");
+        double preco = resultSet.getDouble("preco");
+        Long fornecedorId = resultSet.getLong("fornecedor_id");
+        if (resultSet.wasNull()) {
+            fornecedorId = null;
+        }
+        return new ProdutoDTO(id, nome, categoria, codigoProduto, marca, modelo, descricao, preco, quantidadeEstoque, fornecedorId);
+    }
+
+    @Override
+    public Optional<ProdutoDTO> buscarPorId(Long id) throws SQLException{
+        String sql = "SELECT * FROM produto WHERE id = ?";
+        try (PreparedStatement stmt = conexao.prepareStatement(sql)){
+            stmt.setLong(1, id);
+            try (ResultSet rs = stmt.executeQuery()){
+                if (rs.next()){
+                    return Optional.of(mapearResultSetParaProdutoDTO(rs));
+                }
+            }
+        }
+        return Optional.empty();
+    }
+
+
+    @Override
+    public Optional<ProdutoDTO> buscarPorCodigoProduto(String codigoProduto) throws SQLException {
+        String sql = "SELECT * FROM produto WHERE codigo_produto = ?";
+        try (PreparedStatement stmt = conexao.prepareStatement(sql)){
+            stmt.setString(1, codigoProduto);
+            try (ResultSet rs = stmt.executeQuery()){
+                if (rs.next()){
+                    return Optional.of(mapearResultSetParaProdutoDTO(rs));
+                }
+            }
+        }
+        return Optional.empty();
+    }
+
+    @Override
+    public List<ProdutoDTO> listarTodos() throws SQLException {
+        String sql = "SELECT * FROM produto ORDER BY nome";
+        List<ProdutoDTO> produtos = new ArrayList<>();
+        try (PreparedStatement stmt = conexao.prepareStatement(sql)){
+            ResultSet rs = stmt.executeQuery(sql);
+            while (rs.next())
+                produtos.add(mapearResultSetParaProdutoDTO(rs));
+            }
+        return produtos;
+        }
+
+
+    @Override
+    public List<ProdutoDTO> listarPorCategoria(Categoria categoria) throws SQLException{
+        String sql = "SELECT * FROM produto WHERE categoria = ? ORDER BY nome";
+        List<ProdutoDTO> produtos = new ArrayList<>();
+        try (PreparedStatement stmt = conexao.prepareStatement(sql)){
+            stmt.setString(1, categoria.name());
+            try (ResultSet rs = stmt.executeQuery()){
+                while (rs.next()){
+                    produtos.add(mapearResultSetParaProdutoDTO(rs));
+                }
+            }
+        }
+        return produtos;
+    }
 }
