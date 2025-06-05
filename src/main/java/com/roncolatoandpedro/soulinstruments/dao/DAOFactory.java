@@ -6,7 +6,7 @@ import java.sql.*;
 
 public class DAOFactory {
     private static final String URL = "jbdc/postgresql://localhost:5433/soulinstruments";
-    private static final String USER = "user";
+    private static final String USER = "postgres";
     private static final String PASSWORD = "1234";
 
     public static Connection CreateConnection() throws Exception{

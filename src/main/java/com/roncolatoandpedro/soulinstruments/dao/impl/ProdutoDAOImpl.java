@@ -25,7 +25,7 @@ public class ProdutoDAOImpl implements ProdutoDAO {
         try (PreparedStatement stmt = conexao.prepareStatement (sql, Statement.RETURN_GENERATED_KEYS)) {
             stmt.setString(1, produto.getNome());
             stmt.setString(2, produto.getCategoria().name());
-            stmt.setString(3, produto.getCodigoProduto());
+            stmt.setLong(3, produto.getCodigoProduto());
             stmt.setString(4, produto.getMarca());
             stmt.setString(5, produto.getModelo());
             stmt.setString(6, produto.getDescricao());
@@ -63,7 +63,7 @@ public class ProdutoDAOImpl implements ProdutoDAO {
         try (PreparedStatement stmt = conexao.prepareStatement(sql)) {
             stmt.setString(1, produto.getNome());
             stmt.setString(2, produto.getCategoria().name());
-            stmt.setString(3, produto.getCodigoProduto());
+            stmt.setLong(3, produto.getCodigoProduto());
             stmt.setString(4, produto.getMarca());
             stmt.setString(5, produto.getModelo());
             stmt.setString(6, produto.getDescricao());
@@ -82,10 +82,10 @@ public class ProdutoDAOImpl implements ProdutoDAO {
 
 
     @Override
-    public void deletar(Long id) throws SQLException{
-        String sql = "DELETE FROM produto WHERE id = ?";
+    public void deletar(Long codigoProduto) throws SQLException{
+        String sql = "DELETE FROM produto WHERE codigo_produto = ?";
         try (PreparedStatement stmt = conexao.prepareStatement(sql)) {
-            stmt.setLong(1, id);
+            stmt.setLong(1, codigoProduto);
             stmt.executeUpdate();
         }
     }
@@ -98,7 +98,7 @@ public class ProdutoDAOImpl implements ProdutoDAO {
         Long id = resultSet.getLong("id");
         String nome = resultSet.getString("nome");
         Categoria categoria = Categoria.valueOf(resultSet.getString("categoria"));
-        String codigoProduto = resultSet.getString("codigo_produto");
+        Long codigoProduto = resultSet.getLong("codigo_produto");
         String marca = resultSet.getString("marca");
         String modelo = resultSet.getString("modelo");
         String descricao = resultSet.getString("descricao");

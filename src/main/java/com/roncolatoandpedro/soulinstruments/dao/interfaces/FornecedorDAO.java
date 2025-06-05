@@ -9,7 +9,7 @@ import java.sql.SQLException;
 public interface FornecedorDAO {
     FornecedorDTO salvar(FornecedorDTO fornecedor) throws SQLException; //Retornar o DTO com ID permite que retore o objeto por completo após a persistência
     void atualizar(FornecedorDTO fornecedor) throws SQLException;
-    void remover(Long id) ;
+    void remover(Long id) throws SQLException;
     Optional<FornecedorDTO> buscarPorId(Long id) throws SQLException;
     Optional<FornecedorDTO> buscarPorCnpj(String cnpj) throws SQLException;
     List<FornecedorDTO> listarTodos() throws SQLException;

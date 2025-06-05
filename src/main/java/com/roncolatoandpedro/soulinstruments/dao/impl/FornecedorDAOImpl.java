@@ -1,127 +1,123 @@
 package com.roncolatoandpedro.soulinstruments.dao.impl;
 
-import com.google.inject.Inject;
-import com.google.inject.Provider; // Importante para gerenciar o ciclo de vida do EntityManager
-import com.roncolatoandpedro.soulinstruments.dao.interfaces.FornecedorDAO;
-import com.roncolatoandpedro.soulinstruments.model.Fornecedor;
-import jakarta.persistence.EntityManager;
-import jakarta.persistence.EntityTransaction;
 
+import com.roncolatoandpedro.soulinstruments.dao.interfaces.FornecedorDAO;
+import com.roncolatoandpedro.soulinstruments.dto.FornecedorDTO;
+
+import java.sql.*;
 import java.util.Optional;
+import java.util.List;
+import java.util.ArrayList;
 
 
 public class FornecedorDAOImpl implements FornecedorDAO {
+    private final Connection conexao;
 
-    private final Provider<EntityManager> entityManagerProvider;
-    @Inject
-    public FornecedorDAOImplImpl(Provider<EntityManager> entityManagerProvider) {
-        this.entityManagerProvider = entityManagerProvider;
-    }
-
-    private EntityManager getEntityManager() {
-        return entityManagerProvider.get(); // Obtém uma instância do EntityManager
+    public FornecedorDAOImpl(Connection conexao) {
+        this.conexao = conexao;
     }
 
     @Override
-    public void salvar(Fornecedor fornecedor) {
-        EntityManager em = getEntityManager();
-        EntityTransaction tx = null;
-        try {
-            tx = em.getTransaction();
-            tx.begin();
-            em.persist(fornecedor);
-            tx.commit();
-        } catch (RuntimeException e) {
-            if (tx != null && tx.isActive()) {
-                tx.rollback();
-            }
-            throw e; // Re-lança a exceção para ser tratada pela camada superior
-        } finally {
-            if (em != null) {
-                em.close(); // Sempre feche o EntityManager obtido do Provider
-            }
-        }
-    }
+    public FornecedorDTO salvar(FornecedorDTO fornecedor) throws SQLException {
+        String sql = "INSERT INTO fornecedor (nomeFornecedor, cnpj, descricao) VALUES (?, ?, ?)";
 
-    @Override
-    public void atualizar(Fornecedor fornecedor) {
-        EntityManager em = getEntityManager();
-        EntityTransaction tx = null;
-        try {
-            tx = em.getTransaction();
-            tx.begin();
-            em.merge(fornecedor); // Use merge para atualizar entidades existentes
-            tx.commit();
-        } catch (RuntimeException e) {
-            if (tx != null && tx.isActive()) {
-                tx.rollback();
+        try(PreparedStatement stmt = conexao.prepareStatement(sql,Statement.RETURN_GENERATED_KEYS)){
+            stmt.setString(1, fornecedor.getNomeFornecedor());
+            stmt.setString(2, fornecedor.getCnpj());
+            stmt.setString(3, fornecedor.getDescricao());
+            int affectedRows = stmt.executeUpdate(); //irá receber o numero de colunas afetadas
+            if(affectedRows > 0){ //se for maior que  (o que é bom)
+                try (ResultSet generatedKeys = stmt.getGeneratedKeys()) {
+                    if (generatedKeys.next()) {
+                        fornecedor.setId(generatedKeys.getLong(1)); //obtem o id gerado para o fornecedor
+                    } else {
+                        throw new SQLException("Falha ao obter o ID gerado para o fornecedor");
+                    }
+                }
+            } else {
+                throw new SQLException("Falha ao salvar o fornecedor, nenhuma linha afetada");
             }
-            throw e;
-        } finally {
-            if (em != null) {
-                em.close();
-            }
-        }
-    }
-
-    @Override
-    public void atualizar(Fornecedor fornecedor) {
-        EntityManager em = getEntityManager();
-        EntityTransaction tx = null;
-        try {
-            tx = em.getTransaction();
-            tx.begin();
-            em.merge(fornecedor); // Use merge para atualizar entidades existentes
-            tx.commit();
-        } catch (RuntimeException e) {
-            if (tx != null && tx.isActive()) {
-                tx.rollback();
-            }
-            throw e;
-        } finally {
-            if (em != null) {
-                em.close();
-            }
-        }
-    }
-
-    @Override
-    public void remover(Long id) {
-        EntityManager em = getEntityManager();
-        EntityTransaction tx = null;
-        try {
-            tx = em.getTransaction();
-            tx.begin();
-            Fornecedor fornecedor = em.find(fornecedor.class, id);
-            if (fornecedor != null) {
-                em.remove(fornecedor);
-            }
-            tx.commit();
-        } catch (RuntimeException e) {
-            if (tx != null && tx.isActive()) {
-                tx.rollback();
-            }
-            throw e;
-        } finally {
-            if (em != null) {
-                em.close();
-            }
-        }
-    }
-
-    @Override
-    public Optional<Fornecedor> buscarPorCnpj(Long id) {
-        EntityManager em = getEntityManager();
-        try {
-            return Optional.ofNullable(em.find(Fornecedor.class, cnpj));
-        } finally {
-            if (em != null) {
-                em.close();
-            }
+            return fornecedor;
         }
     }
 
 
+
+    @Override
+    public void atualizar(FornecedorDTO fornecedor) throws SQLException {
+        String sql = "UPDATE fornecedor SET nome_fantasia = ?, cnpj = ?, descricao = ? WHERE id = ?";
+        try (PreparedStatement stmt = conexao.prepareStatement(sql)) {
+            stmt.setString(1, fornecedor.getNomeFornecedor());
+            stmt.setString(2, fornecedor.getCnpj());
+            stmt.setString(3, fornecedor.getDescricao());
+            stmt.setLong(4, fornecedor.getId());
+            stmt.executeUpdate();
+        }
+    }
+
+
+    @Override
+    public void remover(Long id) throws SQLException {
+        // Pedro Adicionar lógica para verificar/tratar dependências (produtos, pedidos) antes de remover,
+        // ou configurar o banco para ON DELETE CASCADE/SET NULL, se apropriado.
+        String sql = "DELETE FROM fornecedor WHERE id = ?";
+        try (PreparedStatement stmt = conexao.prepareStatement(sql)) {
+            stmt.setLong(1, id);
+            stmt.executeUpdate();
+        }
+    }
+
+
+    private FornecedorDTO mapearResultSetParaFornecedorDTO(ResultSet rs) throws SQLException {
+        return new FornecedorDTO(
+                rs.getLong("id"),
+                rs.getString("nome_fantasia"),
+                rs.getString("cnpj"),
+                rs.getString("descricao")
+        );
+    }
+
+    @Override
+    public Optional<FornecedorDTO> buscarPorId(Long id) throws SQLException {
+        String sql = "SELECT * FROM fornecedor WHERE id = ?";
+        try (PreparedStatement stmt = conexao.prepareStatement(sql)) {
+            stmt.setLong(1, id);
+            try (ResultSet rs = stmt.executeQuery()) {
+                if (rs.next()) {
+                    return Optional.of(mapearResultSetParaFornecedorDTO(rs));
+                }
+            }
+        }
+        return Optional.empty();
+    }
+
+
+    @Override
+    public Optional<FornecedorDTO> buscarPorCnpj(String cnpj) throws SQLException {
+        String sql = "SELECT * FROM fornecedor WHERE cnpj = ?";
+        try (PreparedStatement stmt = conexao.prepareStatement(sql)) {
+            stmt.setString(1, cnpj);
+            try (ResultSet rs = stmt.executeQuery()) {
+                if (rs.next()) {
+                    return Optional.of(mapearResultSetParaFornecedorDTO(rs));
+                }
+            }
+        }
+        return Optional.empty();
+    }
+
+    @Override
+    public List<FornecedorDTO> listarTodos() throws SQLException {
+        List<FornecedorDTO> fornecedores = new ArrayList<>();
+        String sql = "SELECT * FROM fornecedor ORDER BY nome_fantasia";
+        try (Statement stmt = conexao.createStatement();
+             ResultSet rs = stmt.executeQuery(sql)) {
+            while (rs.next()) {
+                fornecedores.add(mapearResultSetParaFornecedorDTO(rs));
+            }
+        }
+        return fornecedores;
+    }
 
 
 }

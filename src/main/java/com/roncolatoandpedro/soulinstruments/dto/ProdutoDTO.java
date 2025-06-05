@@ -3,7 +3,7 @@ package com.roncolatoandpedro.soulinstruments.dto;
 import com.roncolatoandpedro.soulinstruments.dto.Categoria;
 
 public class ProdutoDTO extends InstrumentoDTO {
-    private String codigoProduto;
+    private Long codigoProduto;
     private String marca;
     private String modelo;
     private String descricao;
@@ -17,7 +17,7 @@ public class ProdutoDTO extends InstrumentoDTO {
     }
 
     // Construtor completo
-    public ProdutoDTO(Long id, String nome, Categoria categoria, String codigoProduto, String marca, String modelo,
+    public ProdutoDTO(Long id, String nome, Categoria categoria, Long codigoProduto, String marca, String modelo,
                       String descricao, Double preco, int quantidadeEstoque, Long fornecedorId) {
         super(id, nome, categoria); // Chama o construtor da superclasse InstrumentoDTO
         this.codigoProduto = codigoProduto;
@@ -30,11 +30,11 @@ public class ProdutoDTO extends InstrumentoDTO {
     }
 
     // Getters e Setters para os campos específicos de ProdutoDTO
-    public String getCodigoProduto() {
+    public Long getCodigoProduto() {
         return codigoProduto;
     }
 
-    public void setCodigoProduto(String codigoProduto) {
+    public void setCodigoProduto(Long codigoProduto) {
         this.codigoProduto = codigoProduto;
     }
 
