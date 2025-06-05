@@ -1,46 +1,43 @@
 package com.roncolatoandpedro.soulinstruments.dto;
 
-import com.roncolatoandpedro.soulinstruments.dto.Categoria;
-
 public class ProdutoDTO extends InstrumentoDTO {
-    private int codigoProduto;
+    private Long id; // id da tabela PRODUTO (SERIAL)
     private String marca;
     private String modelo;
     private Double preco;
-    private int quantidadeEstoque;
-    private String cnpj;
+    private int quantidade;
+    private String cnpj; // fornecedor_cnpj
 
-    // Construtor padrão
-    public ProdutoDTO(Long id, String nome, Categoria categoria, String marca, String modelo,
-                      Double preco, int quantidadeEstoque, String cnpj
-                      ) {
-        super(id, nome, categoria);
+    // Construtor simples
+    public ProdutoDTO(Long instrumentoId, String nome, Categoria categoria, String marca,
+                      String modelo, Double preco, int quantidade, String cnpj) {
+        super(instrumentoId, nome, categoria); // herda dados do Instrumento
         this.marca = marca;
         this.modelo = modelo;
         this.preco = preco;
-        this.quantidadeEstoque = quantidadeEstoque;
+        this.quantidade = quantidade;
         this.cnpj = cnpj;
     }
 
-    // Construtor completo
-    public ProdutoDTO(Long id, String nome, Categoria categoria, int codigoProduto, String marca, String modelo,
-                      Double preco, int quantidadeEstoque, String cnpj) {
-        super(id, nome, categoria); // Chama o construtor da superclasse InstrumentoDTO
-        this.codigoProduto = codigoProduto;
+    // Construtor completo (com id do produto)
+    public ProdutoDTO(Long id, Long instrumentoId, String nome, Categoria categoria, String marca,
+                      String modelo, Double preco, int quantidade, String cnpj) {
+        super(instrumentoId, nome, categoria);
+        this.id = id;
         this.marca = marca;
         this.modelo = modelo;
         this.preco = preco;
-        this.quantidadeEstoque = quantidadeEstoque;
+        this.quantidade = quantidade;
         this.cnpj = cnpj;
     }
 
-    // Getters e Setters para os campos específicos de ProdutoDTO
-    public String getCodigoProduto() {
-        return codigoProduto;
+    // Getters e Setters
+    public Long getId() {
+        return id;
     }
 
-    public void setCodigoProduto(int codigoProduto) {
-        this.codigoProduto = codigoProduto;
+    public void setId(Long id) {
+        this.id = id;
     }
 
     public String getMarca() {
@@ -59,7 +56,6 @@ public class ProdutoDTO extends InstrumentoDTO {
         this.modelo = modelo;
     }
 
-
     public Double getPreco() {
         return preco;
     }
@@ -68,12 +64,24 @@ public class ProdutoDTO extends InstrumentoDTO {
         this.preco = preco;
     }
 
-    public int getQuantidadeEstoque() {
-        return quantidadeEstoque;
+    public int getQuantidade() {
+        return quantidade;
     }
 
-    public void setQuantidadeEstoque(int quantidadeEstoque) {
-        this.quantidadeEstoque = quantidadeEstoque;
+    public void setQuantidade(int quantidade) {
+        this.quantidade = quantidade;
+    }
+
+    public String getCnpj() {
+        return cnpj;
+    }
+
+    public void setCnpj(String cnpj) {
+        this.cnpj = cnpj;
+    }
+
+    public Long getInstrumentoId() {
+        return super.getId();
     }
 
 }

@@ -1,5 +1,9 @@
 package com.roncolatoandpedro.soulinstruments.dao.interfaces;
 
+import com.roncolatoandpedro.soulinstruments.dto.PedidoDTO;
+
 public interface PedidoDAO {
-    void salvar(PedidoDAO pedidoDAO) throws Exception;
+
+    void salvar(PedidoDTO pedidoDTO) throws Exception;
+    void atualizar(PedidoDTO pedidoDTO) throws Exception;
 }

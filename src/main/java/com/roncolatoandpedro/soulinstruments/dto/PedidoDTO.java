@@ -5,28 +5,31 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class PedidoDTO {
-    private Long idPedido;
+    private Long id; // compatível com o banco
     private LocalDate dataPedido;
-    private Double valorTotal; //Pode ser calculado ou armazenado
-    private String cnpj; //FK
-    private List<ItemPedidoDTO> itens;
+    private Double valorPedido; // nome igual ao banco
 
-    public PedidoDTO() {}
+    private List<ItemPedidoDTO> itens; // ainda útil se você está montando objetos compostos no back
 
-    public PedidoDTO(Long idPedido, LocalDate dataPedido, Double valorTotal, String cnpj) {
-        this.idPedido = idPedido;
-        this.dataPedido = dataPedido;
-        this.valorTotal = valorTotal;
-        this.cnpj = cnpj;
+    public PedidoDTO(Double valorPedido) {
+        this.valorPedido = valorPedido;
+        this.dataPedido = LocalDate.now(); // se quiser definir automaticamente no Java também
         this.itens = new ArrayList<>();
     }
 
-    public Long getIdPedido() {
-        return idPedido;
+    public PedidoDTO(Long id, LocalDate dataPedido, Double valorPedido) {
+        this.id = id;
+        this.dataPedido = dataPedido;
+        this.valorPedido = valorPedido;
+        this.itens = new ArrayList<>();
     }
 
-    public void setIdPedido(Long idPedido) {
-        this.idPedido = idPedido;
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
     }
 
     public LocalDate getDataPedido() {
@@ -37,20 +40,12 @@ public class PedidoDTO {
         this.dataPedido = dataPedido;
     }
 
-    public Double getValorTotal() {
-        return valorTotal;
+    public Double getValorPedido() {
+        return valorPedido;
     }
 
-    public void setValorTotal(Double valorTotal) {
-        this.valorTotal = valorTotal;
-    }
-
-    public String getFornecedorId() {
-        return cnpj;
-    }
-
-    public void setFornecedorId(String fornecedorId) {
-        this.cnpj = fornecedorId;
+    public void setValorPedido(Double valorPedido) {
+        this.valorPedido = valorPedido;
     }
 
     public List<ItemPedidoDTO> getItens() {

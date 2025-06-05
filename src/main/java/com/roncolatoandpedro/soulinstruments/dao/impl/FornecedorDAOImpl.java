@@ -23,6 +23,8 @@ public class FornecedorDAOImpl implements FornecedorDAO {
             stmt.setString(2, fornecedor.getCnpj());
             stmt.setString(3, fornecedor.getEmail());
             stmt.executeUpdate();
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
         }
     }
 }
