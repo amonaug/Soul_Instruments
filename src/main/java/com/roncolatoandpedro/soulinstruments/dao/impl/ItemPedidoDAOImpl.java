@@ -33,7 +33,7 @@ public class ItemPedidoDAOImpl implements ItemPedidoDAO {
 
         // Colunas: id Chave Prim, pedido_id (FK), produto_id (FK), quantidade, preco_unitario_compra
         // Assumindo que itemPedido.getIdProduto() se refere ao ID da tabela produto
-        String sql = "INSERT INTO item_pedido (pedido_id, produto_id, quantidade, preco_unitario_compra, valor_total_item) VALUES (?, ?, ?, ?)";
+        String sql = "INSERT INTO item_pedido (pedido_id, produto_id, quantidade, preco_unitario_compra, valor_total_item) VALUES (?, ?, ?, ?, ?)";
         try (PreparedStatement stmt = conexao.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
             stmt.setLong(1, pedidoId);
             stmt.setLong(2, itemPedido.getIdProduto()); // Usando o id numérico do produto

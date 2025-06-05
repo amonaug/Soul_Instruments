@@ -32,7 +32,7 @@ public class ProdutoDAOImpl implements ProdutoDAO {
             stmt.setInt(7, produto.getQuantidadeEstoque());
             stmt.setDouble(8, produto.getPreco());
 
-            if(produto.getFornecedorId() == null){
+            if(produto.getFornecedorId() != null){
                 stmt.setLong(9, produto.getFornecedorId());
             } else {
                 stmt.setNull(9, java.sql.Types.BIGINT);
