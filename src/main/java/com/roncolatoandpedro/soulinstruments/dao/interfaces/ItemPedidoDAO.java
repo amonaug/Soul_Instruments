@@ -5,14 +5,10 @@ import com.roncolatoandpedro.soulinstruments.dto.ProdutoDTO; // Para buscar o pr
 
 import java.sql.SQLException;
 import java.util.List;
-
-
 /*
  Esse IMPL é como se fosse o carrinho de supermercado com os itens
- por isso tem uma lista de itemPedido na linha 19
+ por isso tem uma lista de itemPedido na linha 15
 */
-
-
 public interface ItemPedidoDAO {
     // O ProdutoDAO será necessário para buscar o preço do produto, por isso referência-lo
     ItemPedidoDTO salvar(ItemPedidoDTO itemPedido, Long pedidoId, ProdutoDAO produtoDAO) throws SQLException;
