@@ -2,40 +2,38 @@ package com.roncolatoandpedro.soulinstruments.dto;
 
 import com.roncolatoandpedro.soulinstruments.dto.Categoria;
 
-public class ProdutoDTO extends InstrumentoDTO {
-    private Long codigoProduto;
+public class ProdutoDTO {
+    private Long idProduto;
     private String marca;
     private String modelo;
     private String descricao;
     private Double preco;
     private int quantidadeEstoque;
-    private Long fornecedorId;
+    private Long idInstrumento;
+    private Long idFornecedor;
 
     // Construtor padrão
     public ProdutoDTO() {
-        super();
     }
 
     // Construtor completo
-    public ProdutoDTO(Long id, String nome, Categoria categoria, Long codigoProduto, String marca, String modelo,
-                      String descricao, Double preco, int quantidadeEstoque, Long fornecedorId) {
-        super(id, nome, categoria); // Chama o construtor da superclasse InstrumentoDTO
-        this.codigoProduto = codigoProduto;
+    public ProdutoDTO(Long idProduto, String marca, String modelo, String descricao, Double preco, int quantidadeEstoque, Long idInstrumento, Long idFornecedor) {
+        this.idProduto = idProduto;
         this.marca = marca;
         this.modelo = modelo;
         this.descricao = descricao;
         this.preco = preco;
         this.quantidadeEstoque = quantidadeEstoque;
-        this.fornecedorId = fornecedorId;
+        this.idInstrumento = idInstrumento;
+        this.idFornecedor = idFornecedor;
     }
 
-    // Getters e Setters para os campos específicos de ProdutoDTO
-    public Long getCodigoProduto() {
-        return codigoProduto;
+    public Long getIdProduto() {
+        return idProduto;
     }
 
-    public void setCodigoProduto(Long codigoProduto) {
-        this.codigoProduto = codigoProduto;
+    public void setIdProduto(Long idProduto) {
+        this.idProduto = idProduto;
     }
 
     public String getMarca() {
@@ -78,11 +76,19 @@ public class ProdutoDTO extends InstrumentoDTO {
         this.quantidadeEstoque = quantidadeEstoque;
     }
 
-    public Long getFornecedorId() {
-        return fornecedorId;
+    public Long getIdInstrumento() {
+        return idInstrumento;
     }
 
-    public void setFornecedorId(Long fornecedorId) {
-        this.fornecedorId = fornecedorId;
+    public void setIdInstrumento(Long idInstrumento) {
+        this.idInstrumento = idInstrumento;
+    }
+
+    public Long getIdFornecedor() {
+        return idFornecedor;
+    }
+
+    public void setIdFornecedor(Long idFornecedor) {
+        this.idFornecedor = idFornecedor;
     }
 }

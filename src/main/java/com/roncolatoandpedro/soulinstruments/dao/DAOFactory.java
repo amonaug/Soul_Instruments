@@ -17,8 +17,6 @@ public class DAOFactory {
     private static final String URL = "jbdc/postgresql://localhost:5433/soulinstruments";
     private static final String USER = "postgres";
     private static final String PASSWORD = "1234";
-
-
     static {
         try {
             Class.forName("org.postgresql.Driver");
@@ -37,19 +35,16 @@ public class DAOFactory {
     public static ProdutoDAO criarProdutoDAO() throws SQLException {
         return new ProdutoDAOImpl(getConexao());
     }
-
     public static FornecedorDAO criarFornecedorDAO() throws SQLException {
         return new FornecedorDAOImpl(getConexao());
     }
-
     public static ItemPedidoDAO criarItemPedidoDAO() throws SQLException {
         // Se ItemPedidoDAOImpl não precisar de outras dependências DAO no construtor
         return new ItemPedidoDAOImpl(getConexao());
     }
-
     public static PedidoDAO criarPedidoDAO() throws SQLException {
         // PedidoDAOImpl precisa de ItemPedidoDAO e ProdutoDAO
-        // Neste caso, o DAOFactory precisa instanciá-los.
+        // Neste caso, o DAOFactory precisa instanciá-los. Linhas 56 e 57
         Connection conexao = getConexao(); // Obter a conexão uma vez para todos os DAOs nesta operação
 
         // Criar as dependências DAO usando a mesma conexão para consistência transacional

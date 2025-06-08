@@ -1,31 +1,26 @@
 package com.roncolatoandpedro.soulinstruments.dto;
 
-import com.roncolatoandpedro.soulinstruments.model.Fornecedor;
-import com.roncolatoandpedro.soulinstruments.model.Produto;
-
-import java.util.ArrayList;
-
 public class FornecedorDTO {
-    private Long id;
+    private Long idFornecedor;
     private String nomeFornecedor;
     private String cnpj;
     private String descricao;
     
     public FornecedorDTO() {}
     
-    public FornecedorDTO(Long id, String nomeFornecedor, String cnpj, String descricao) {
-        this.id = id;
+    public FornecedorDTO(Long idFornecedor, String nomeFornecedor, String cnpj, String descricao) {
+        this.idFornecedor = idFornecedor;
         this.nomeFornecedor = nomeFornecedor;
         this.cnpj = cnpj;
         this.descricao = descricao;
     }
 
-    public Long getId() {
-        return id;
+    public Long getIdFornecedor() {
+        return idFornecedor;
     }
 
-    public void setId(Long id) {
-        this.id = id;
+    public void setIdFornecedor(Long id) {
+        this.idFornecedor = idFornecedor;
     }
 
     public String getNomeFornecedor() {

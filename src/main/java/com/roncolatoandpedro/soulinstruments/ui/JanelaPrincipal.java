@@ -1,13 +1,23 @@
 package com.roncolatoandpedro.soulinstruments.ui;
 
-import com.google.inject.Inject;
-import com.google.inject.Injector;
-
 import javax.swing.*;
-import javax.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 
-public class JanelaPrincipal extends JFrame {
+public class JanelaPrincipal {
+    private JPanel Janela;
+    private JButton button1;
 
-    private PainelProdutos painelProdutos = new PainelProdutos();
-    private PainelFornecedor painelFornecedor = new PainelFornecedor();
+    public JanelaPrincipal() {
+        button1.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+
+            }
+        });
+    }
+
+    private void createUIComponents() {
+        // TODO: place custom component creation code here
+    }
 }

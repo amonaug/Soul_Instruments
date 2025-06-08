@@ -1,49 +1,58 @@
 package com.roncolatoandpedro.soulinstruments.dto;
 
 public class ItemPedidoDTO {
-    private Long id;
-    private Long idPedido; //FK
-    private Long idProduto; //FK
+    private Long idItemPedido;
     private int quantidade;
-    private double precoUnitarioCompra; //FK
-    private double valorTotalItem;    // Calculado: quantidade * precoUnitarioCompra
-
+    private Double valorUnitario; // Preço do produto no momento da compra
+    private Double valorTotal;    // Calculado: quantidade * valorUnitario
+    private Long idProduto;
+    private Long idPedido;
 
     public ItemPedidoDTO() {}
-    // Construtor para quando estamos criando um novo item (sem ID do item ainda, preço será buscado)
+
     public ItemPedidoDTO(Long idProduto, int quantidade) {
         this.idProduto = idProduto;
         this.quantidade = quantidade;
-        // precoUnitarioCompra e valorTotalItem serão definidos após buscar o preço do produto
     }
-    public ItemPedidoDTO(Long id, Long idPedido, Long idProduto, int quantidade, double precoUnitarioCompra) {
-        this.id = id;
-        this.idPedido = idPedido;
-        this.idProduto = idProduto;
+
+    public void calcularValorTotal() {
+        if (this.valorUnitario != null && this.quantidade > 0) {
+            this.valorTotal = this.quantidade * this.valorUnitario;
+        } else {
+            this.valorTotal = 0.0;
+        }
+    }
+
+    public Long getIdItemPedido() {
+        return idItemPedido;
+    }
+
+    public void setIdItemPedido(Long idItemPedido) {
+        this.idItemPedido = idItemPedido;
+    }
+
+    public int getQuantidade() {
+        return quantidade;
+    }
+
+    public void setQuantidade(int quantidade) {
         this.quantidade = quantidade;
-        this.precoUnitarioCompra = precoUnitarioCompra;
-        this.calcularValorTotalItem();
     }
 
-    // Método para calcular o valor total do item
-    public void calcularValorTotalItem() {
-        this.valorTotalItem = this.quantidade * this.precoUnitarioCompra;
+    public Double getValorUnitario() {
+        return valorUnitario;
     }
 
-    public Long getId() {
-        return id;
+    public void setValorUnitario(Double valorUnitario) {
+        this.valorUnitario = valorUnitario;
     }
 
-    public void setId(Long id) {
-        this.id = id;
+    public Double getValorTotal() {
+        return valorTotal;
     }
 
-    public Long getIdPedido() {
-        return idPedido;
-    }
-
-    public void setIdPedido(Long idPedido) {
-        this.idPedido = idPedido;
+    public void setValorTotal(Double valorTotal) {
+        this.valorTotal = valorTotal;
     }
 
     public Long getIdProduto() {
@@ -54,35 +63,11 @@ public class ItemPedidoDTO {
         this.idProduto = idProduto;
     }
 
-    public int getQuantidade() {
-        return quantidade;
+    public Long getIdPedido() {
+        return idPedido;
     }
 
-    public void setQuantidade(int quantidade) {
-        this.quantidade = quantidade;
-        // Recalcula se a quantidade mudar e o preço já estiver definido
-        if (this.precoUnitarioCompra > 0) {
-            calcularValorTotalItem();
-        }
-    }
-
-    public double getPrecoUnitarioCompra() {
-        return precoUnitarioCompra;
-    }
-
-    public void setPrecoUnitarioCompra(double precoUnitarioCompra) {
-        this.precoUnitarioCompra = precoUnitarioCompra;
-        // Recalcula se o preço mudar e a quantidade já estiver definida
-        if (this.quantidade > 0) {
-            calcularValorTotalItem();
-        }
-    }
-
-    public double getValorTotalItem() {
-        return valorTotalItem;
-    }
-
-    public void setValorTotalItem(double valorTotalItem) {
-        this.valorTotalItem = valorTotalItem;
+    public void setIdPedido(Long idPedido) {
+        this.idPedido = idPedido;
     }
 }
