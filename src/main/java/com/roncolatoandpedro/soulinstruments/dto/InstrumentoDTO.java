@@ -3,26 +3,26 @@ package com.roncolatoandpedro.soulinstruments.dto;
 import com.roncolatoandpedro.soulinstruments.dto.Categoria;
 
 public class InstrumentoDTO {
-    private Long id;
+    private Long idInstrumento;
     private String nome;
     private Categoria categoria;
 
     public InstrumentoDTO() {
     }
 
-    public InstrumentoDTO(Long id, String nome, Categoria categoria) {
-        this.id = id;
+    public InstrumentoDTO(Long idInstrumento, String nome, Categoria categoria) {
+        this.idInstrumento = idInstrumento;
         this.nome = nome;
         this.categoria = categoria;
     }
 
     // Getters e Setters
-    public Long getId() {
-        return id;
+    public Long getIdInstrumento() {
+        return idInstrumento;
     }
 
-    public void setId(Long id) {
-        this.id = id;
+    public void setIdInstrumento(Long id) {
+        this.idInstrumento = idInstrumento;
     }
 
     public String getNome() {

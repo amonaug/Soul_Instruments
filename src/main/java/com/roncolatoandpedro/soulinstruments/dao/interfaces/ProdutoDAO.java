@@ -10,9 +10,8 @@ import java.util.Optional;
 public interface ProdutoDAO {
     ProdutoDTO salvar(ProdutoDTO produto) throws SQLException; //Retornar o DTO com ID permite que retore o objeto por completo após a persistência
     void atualizar(ProdutoDTO produto) throws SQLException;
-    void deletar(Long codigoProduto) throws SQLException;
-    Optional<ProdutoDTO> buscarPorId(Long id) throws SQLException;
-    Optional<ProdutoDTO> buscarPorCodigoProduto(String codigoProduto) throws SQLException;
+    void deletar(Long idProduto) throws SQLException;
+    Optional<ProdutoDTO> buscarPorId(Long idProduto) throws SQLException;
+    Optional<ProdutoDTO> buscarPorIdProduto(Long idProduto) throws SQLException;
     List<ProdutoDTO> listarTodos() throws SQLException;
-    List<ProdutoDTO> listarPorCategoria(Categoria categoria) throws SQLException;
 }
