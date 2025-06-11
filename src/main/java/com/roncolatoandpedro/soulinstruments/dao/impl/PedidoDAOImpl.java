@@ -28,7 +28,7 @@ public class PedidoDAOImpl implements PedidoDAO {
 
     @Override
     public PedidoDTO salvar(PedidoDTO pedido) throws SQLException {
-        String sqlPedido = "INSERT INTO pedido (dataPedido, dataEntrega, valorTotal, idFornecedor) VALUES (?, ?, ?, ?)";
+        String sqlPedido = "INSERT INTO Pedido (dataPedido, dataEntrega, valorTotal, idFornecedor) VALUES (?, ?, ?, ?)";
 
         boolean originalAutoCommit = conexao.getAutoCommit();
         try {
@@ -102,7 +102,7 @@ public class PedidoDAOImpl implements PedidoDAO {
         // (embora o ideal seja que o DTO gerencie isso ao modificar a lista de itens)
         pedido.calcularValorTotalPedido();
 
-        String sql = "UPDATE pedido SET dataEntrega = ?, valorTotal = ? WHERE idPedido = ?";
+        String sql = "UPDATE Pedido SET dataEntrega = ?, valorTotal = ? WHERE idPedido = ?";
         try (PreparedStatement stmt = conexao.prepareStatement(sql)) {
             if (pedido.getDataEntrega() != null) {
                 stmt.setDate(1, Date.valueOf(pedido.getDataEntrega()));
@@ -117,8 +117,8 @@ public class PedidoDAOImpl implements PedidoDAO {
 
     @Override
     public void remover(Long idPedido, Long idItemPedido) throws SQLException {
-        String sqlItens = "DELETE FROM item_pedido WHERE idItemPedido = ?";
-        String sqlPedido = "DELETE FROM pedido WHERE idPedido = ?";
+        String sqlItens = "DELETE FROM ItemPedido WHERE idItemPedido = ?";
+        String sqlPedido = "DELETE FROM Pedido WHERE idPedido = ?";
 
         boolean originalAutoCommit = conexao.getAutoCommit();
         try {
@@ -147,20 +147,20 @@ public class PedidoDAOImpl implements PedidoDAO {
 
 
     private PedidoDTO mapearResultSetParaPedidoDTO(ResultSet rs) throws SQLException {
-        // Note que o construtor de PedidoDTO mudou para não receber valorTotal diretamente
-        PedidoDTO pedido = new PedidoDTO(
-                rs.getLong("idPedido"),
-                rs.getDate("dataPedido").toLocalDate(),
-                rs.getDate("dataEntrega") != null ? rs.getDate("dataEntrega").toLocalDate() : null,
-                rs.getLong("idFornecedor")
-        );
+        PedidoDTO pedido = new PedidoDTO();
+        pedido.setIdPedido(rs.getLong("idPedido"));
+        pedido.setDataPedido(rs.getDate("dataPedido").toLocalDate());
+        if (rs.getDate("dataEntrega") != null) {
+            pedido.setDataEntrega(rs.getDate("dataEntrega").toLocalDate());
+        }
+        pedido.setIdFornecedor(rs.getLong("idFornecedor"));
         pedido.setValorTotal(rs.getDouble("valorTotal"));
         return pedido;
     }
 
     @Override
     public Optional<PedidoDTO> buscarPorId(Long idPedido) throws SQLException {
-        String sql = "SELECT * FROM pedido WHERE idPedido = ?";
+        String sql = "SELECT * FROM Pedido WHERE idPedido = ?";
         PedidoDTO pedido = null;
         try (PreparedStatement stmt = conexao.prepareStatement(sql)) {
             stmt.setLong(1, idPedido);
@@ -194,7 +194,7 @@ public class PedidoDAOImpl implements PedidoDAO {
     @Override
     public List<PedidoDTO> listarTodos() throws SQLException {
         List<PedidoDTO> pedidos = new ArrayList<>();
-        String sql = "SELECT * FROM pedido ORDER BY dataPedido DESC";
+        String sql = "SELECT * FROM Pedido ORDER BY dataPedido DESC";
         try (Statement stmt = conexao.createStatement();
              ResultSet rs = stmt.executeQuery(sql)) {
             while (rs.next()) {
@@ -210,7 +210,7 @@ public class PedidoDAOImpl implements PedidoDAO {
     @Override
     public List<PedidoDTO> listarPorPeriodo(LocalDate dataInicio, LocalDate dataFim) throws SQLException {
         List<PedidoDTO> pedidos = new ArrayList<>();
-        String sql = "SELECT * FROM pedido WHERE dataPedido BETWEEN ? AND ? ORDER BY dataPedido DESC";
+        String sql = "SELECT * FROM Pedido WHERE dataPedido BETWEEN ? AND ? ORDER BY dataPedido DESC";
         try (PreparedStatement stmt = conexao.prepareStatement(sql)) {
             stmt.setDate(1, Date.valueOf(dataInicio));
             stmt.setDate(2, Date.valueOf(dataFim));
@@ -229,7 +229,7 @@ public class PedidoDAOImpl implements PedidoDAO {
     @Override
     public List<PedidoDTO> listarPorFornecedor(Long idFornecedor) throws SQLException {
         List<PedidoDTO> pedidos = new ArrayList<>();
-        String sql = "SELECT * FROM pedido WHERE idFornecedor = ? ORDER BY dataPedido DESC";
+        String sql = "SELECT * FROM Pedido WHERE idFornecedor = ? ORDER BY dataPedido DESC";
         try (PreparedStatement stmt = conexao.prepareStatement(sql)) {
             stmt.setLong(1, idFornecedor);
             try (ResultSet rs = stmt.executeQuery()) {

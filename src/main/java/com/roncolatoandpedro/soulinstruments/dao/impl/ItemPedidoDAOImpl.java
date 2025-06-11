@@ -30,7 +30,7 @@ public class ItemPedidoDAOImpl implements ItemPedidoDAO {
 
         // Colunas: idItemPedido Chave Prim, idPedido (FK), idProduto (FK), quantidade, valorUnitario, valorTotal
         // Assumindo que itemPedido.getIdProduto() se refere ao ID da tabela produto
-        String sql = "INSERT INTO item_pedido (idPedido, idProduto, quantidade, valorUnitario, valorTotal) VALUES (?, ?, ?, ?, ?)";
+        String sql = "INSERT INTO ItemPedido (idPedido, idProduto, quantidade, valorUnitario, valorTotal) VALUES (?, ?, ?, ?, ?)";
         try (PreparedStatement stmt = conexao.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
             stmt.setLong(1, idPedido);
             stmt.setLong(2, itemPedido.getIdProduto()); // Usando o id numérico do produto
@@ -70,7 +70,7 @@ public class ItemPedidoDAOImpl implements ItemPedidoDAO {
     @Override
     public List<ItemPedidoDTO> buscarPorPedidoId(Long idPedido) throws SQLException {
         List<ItemPedidoDTO> itens = new ArrayList<>();
-        String sql = "SELECT * FROM item_pedido WHERE idPedido = ?";
+        String sql = "SELECT * FROM ItemPedido WHERE idPedido = ?";
         try (PreparedStatement stmt = conexao.prepareStatement(sql)) {
             stmt.setLong(1, idPedido);
             try (ResultSet rs = stmt.executeQuery()) {

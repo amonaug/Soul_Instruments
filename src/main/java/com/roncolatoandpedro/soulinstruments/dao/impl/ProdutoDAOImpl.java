@@ -19,7 +19,7 @@ public class ProdutoDAOImpl implements ProdutoDAO {
 
     @Override
     public ProdutoDTO salvar(ProdutoDTO produto) throws SQLException{
-        String sql = "INSERT INTO produto (idProduto, marca, modelo, descricao, preco, quantidadeEstoque, idInstrumento, idFornecedor)" +
+        String sql = "INSERT INTO Produto (idProduto, marca, modelo, descricao, preco, quantidadeEstoque, idInstrumento, idFornecedor)" +
                 "VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
 
         try (PreparedStatement stmt = conexao.prepareStatement (sql, Statement.RETURN_GENERATED_KEYS)) {
@@ -30,11 +30,15 @@ public class ProdutoDAOImpl implements ProdutoDAO {
             stmt.setDouble(5, produto.getPreco());
             stmt.setInt(6, produto.getQuantidadeEstoque());
             stmt.setLong(7, produto.getIdInstrumento());
-            stmt.setLong(8, produto.getIdFornecedor());
+            if (produto.getIdFornecedor() != null) {
+                stmt.setLong(8, produto.getIdFornecedor());
+            } else {
+                stmt.setNull(8, java.sql.Types.BIGINT);
+            }
 
             int affectedRows = stmt.executeUpdate();
 
-            if (affectedRows == 0) {
+            if (affectedRows > 0) {
                 try (ResultSet generatedKeys = stmt.getGeneratedKeys()) {
                     if (generatedKeys.next()){
                         produto.setIdProduto(generatedKeys.getLong(1)); //define o ID gerado para o produto
@@ -51,7 +55,7 @@ public class ProdutoDAOImpl implements ProdutoDAO {
 
     @Override
     public void atualizar(ProdutoDTO produto) throws SQLException{
-        String sql = "UPDATE produto SET marca = ?, modelo = ?, descricao = ?, preco = ?, quantidadeEstoque = ?, idInstrumento = ?, idFornecedor = ? WHERE idProduto = ?, ";
+        String sql = "UPDATE Produto SET marca = ?, modelo = ?, descricao = ?, preco = ?, quantidadeEstoque = ?, idInstrumento = ?, idFornecedor = ? WHERE idProduto = ?, ";
         try (PreparedStatement stmt = conexao.prepareStatement(sql)) {
             stmt.setString(1, produto.getMarca());
             stmt.setString(2, produto.getModelo());
@@ -61,7 +65,7 @@ public class ProdutoDAOImpl implements ProdutoDAO {
             stmt.setLong(6, produto.getIdInstrumento());
             stmt.setLong(7, produto.getIdFornecedor());
             stmt.setLong(8, produto.getIdProduto());
-            if (produto.getIdFornecedor() == null) {
+            if (produto.getIdFornecedor() != null) {
                 stmt.setLong(9, produto.getIdFornecedor());
             } else {
                 stmt.setNull(9, java.sql.Types.BIGINT);
@@ -72,8 +76,8 @@ public class ProdutoDAOImpl implements ProdutoDAO {
 
 
     @Override
-    public void deletar(Long idProduto) throws SQLException{
-        String sql = "DELETE FROM produto WHERE idProduto = ?";
+    public void remover(Long idProduto) throws SQLException{
+        String sql = "DELETE FROM Produto WHERE idProduto = ?";
         try (PreparedStatement stmt = conexao.prepareStatement(sql)) {
             stmt.setLong(1, idProduto);
             stmt.executeUpdate();
@@ -103,22 +107,7 @@ public class ProdutoDAOImpl implements ProdutoDAO {
 
     @Override
     public Optional<ProdutoDTO> buscarPorId(Long idProduto) throws SQLException{
-        String sql = "SELECT * FROM produto WHERE idProduto = ?";
-        try (PreparedStatement stmt = conexao.prepareStatement(sql)){
-            stmt.setLong(1, idProduto);
-            try (ResultSet rs = stmt.executeQuery()){
-                if (rs.next()){
-                    return Optional.of(mapearResultSetParaProdutoDTO(rs));
-                }
-            }
-        }
-        return Optional.empty();
-    }
-
-
-    @Override
-    public Optional<ProdutoDTO> buscarPorIdProduto(Long idProduto) throws SQLException {
-        String sql = "SELECT * FROM produto WHERE idProduto = ?";
+        String sql = "SELECT * FROM Produto WHERE idProduto = ?";
         try (PreparedStatement stmt = conexao.prepareStatement(sql)){
             stmt.setLong(1, idProduto);
             try (ResultSet rs = stmt.executeQuery()){
@@ -132,9 +121,9 @@ public class ProdutoDAOImpl implements ProdutoDAO {
 
     @Override
     public List<ProdutoDTO> listarTodos() throws SQLException {
-        String sql = "SELECT * FROM produto ORDER BY idInstrumento"; //aqui lista por idInstrumento - tipo de instrumento
+        String sql = "SELECT * FROM Produto ORDER BY idInstrumento"; //aqui lista por idInstrumento - tipo de instrumento
         List<ProdutoDTO> produtos = new ArrayList<>();
-        try (PreparedStatement stmt = conexao.prepareStatement(sql)){
+        try (Statement stmt = conexao.createStatement()){
             ResultSet rs = stmt.executeQuery(sql);
             while (rs.next())
                 produtos.add(mapearResultSetParaProdutoDTO(rs));
