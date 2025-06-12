@@ -1,25 +1,19 @@
 package com.roncolatoandpedro.soulinstruments.dao.impl;
 
+import com.google.inject.Inject;
+import com.google.inject.Provider;
 import com.roncolatoandpedro.soulinstruments.dao.interfaces.PedidoDAO;
-import com.roncolatoandpedro.soulinstruments.dto.PedidoDTO;
+import jakarta.persistence.EntityManager;
 
-import java.sql.*;
 
-public abstract class PedidoDAOImpl implements PedidoDAO{
-    private Connection connection;
-
-    public PedidoDAOImpl(Connection connection) {
-        this.connection = connection;
+public class PedidoDAOImpl implements PedidoDAO {
+    private final Provider<EntityManager> entityManagerProvider;
+    @Inject
+    public PedidoDAOImpl(Provider<EntityManager> entityManagerProvider) {
+        this.entityManagerProvider = entityManagerProvider;
     }
 
-    @Override
-    public void salvar(PedidoDTO pedido) throws Exception{
-        String sql = "INSERT INTO pedido (valorPedido) VALUES (?)";
-
-        try(PreparedStatement stmt = connection.prepareStatement(sql)){
-            stmt.setDouble(1, pedido.getValorPedido());
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
+    private EntityManager getEntityManager() {
+        return entityManagerProvider.get(); // Obtém uma instância do EntityManager
     }
 }

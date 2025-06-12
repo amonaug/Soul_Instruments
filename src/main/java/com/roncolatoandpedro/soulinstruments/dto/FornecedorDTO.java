@@ -1,21 +1,33 @@
 package com.roncolatoandpedro.soulinstruments.dto;
 
+import com.roncolatoandpedro.soulinstruments.model.Fornecedor;
+import com.roncolatoandpedro.soulinstruments.model.Produto;
+
 import java.util.ArrayList;
 
 public class FornecedorDTO {
+    private Long id;
     private String nomeFornecedor;
     private String cnpj;
-    private String email;
+    private String descricao;
     
-    public FornecedorDTO(String nomeFornecedor, String cnpj, String email) {
+    public FornecedorDTO() {}
+    
+    public FornecedorDTO(Long id, String nomeFornecedor, String cnpj, String descricao) {
+        this.id = id;
         this.nomeFornecedor = nomeFornecedor;
         this.cnpj = cnpj;
-        this.email = email;
+        this.descricao = descricao;
     }
 
-    public String getEmail() {return email;}
+    public Long getId() {
+        return id;
+    }
 
-    public void setEmail(String email) {this.email = email;}
+    public void setId(Long id) {
+        this.id = id;
+    }
+
     public String getNomeFornecedor() {
         return nomeFornecedor;
     }
@@ -32,4 +44,11 @@ public class FornecedorDTO {
         this.cnpj = cnpj;
     }
 
+    public String getDescricao() {
+        return descricao;
+    }
+
+    public void setDescricao(String descricao) {
+        this.descricao = descricao;
+    }
 }

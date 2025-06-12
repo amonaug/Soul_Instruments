@@ -1,43 +1,34 @@
 package com.roncolatoandpedro.soulinstruments.dto;
 
 public class ItemPedidoDTO {
-    private Long id;
-    private Long idPedido; //FK
-    private Long idProduto; //FK
+    private Long idItemPedido;
     private int quantidade;
-    private double precoUnitarioCompra;
+    private Double valorUnitario; // Preço do produto no momento da compra
+    private Double valorTotal;    // Calculado: quantidade * valorUnitario
+    private Long idProduto;
+    private Long idPedido;
 
     public ItemPedidoDTO() {}
-    public ItemPedidoDTO(Long id, Long idPedido, Long idProduto, int quantidade, double precoUnitarioCompra) {
-        this.id = id;
-        this.idPedido = idPedido;
+
+    public ItemPedidoDTO(Long idProduto, int quantidade) {
         this.idProduto = idProduto;
         this.quantidade = quantidade;
-        this.precoUnitarioCompra = precoUnitarioCompra;
     }
 
-    public Long getId() {
-        return id;
+    public void calcularValorTotal() {
+        if (this.valorUnitario != null && this.quantidade > 0) {
+            this.valorTotal = this.quantidade * this.valorUnitario;
+        } else {
+            this.valorTotal = 0.0;
+        }
     }
 
-    public void setId(Long id) {
-        this.id = id;
+    public Long getIdItemPedido() {
+        return idItemPedido;
     }
 
-    public Long getIdPedido() {
-        return idPedido;
-    }
-
-    public void setIdPedido(Long idPedido) {
-        this.idPedido = idPedido;
-    }
-
-    public Long getIdProduto() {
-        return idProduto;
-    }
-
-    public void setIdProduto(Long idProduto) {
-        this.idProduto = idProduto;
+    public void setIdItemPedido(Long idItemPedido) {
+        this.idItemPedido = idItemPedido;
     }
 
     public int getQuantidade() {
@@ -48,11 +39,35 @@ public class ItemPedidoDTO {
         this.quantidade = quantidade;
     }
 
-    public double getPrecoUnitarioCompra() {
-        return precoUnitarioCompra;
+    public Double getValorUnitario() {
+        return valorUnitario;
     }
 
-    public void setPrecoUnitarioCompra(double precoUnitarioCompra) {
-        this.precoUnitarioCompra = precoUnitarioCompra;
+    public void setValorUnitario(Double valorUnitario) {
+        this.valorUnitario = valorUnitario;
+    }
+
+    public Double getValorTotal() {
+        return valorTotal;
+    }
+
+    public void setValorTotal(Double valorTotal) {
+        this.valorTotal = valorTotal;
+    }
+
+    public Long getIdProduto() {
+        return idProduto;
+    }
+
+    public void setIdProduto(Long idProduto) {
+        this.idProduto = idProduto;
+    }
+
+    public Long getIdPedido() {
+        return idPedido;
+    }
+
+    public void setIdPedido(Long idPedido) {
+        this.idPedido = idPedido;
     }
 }

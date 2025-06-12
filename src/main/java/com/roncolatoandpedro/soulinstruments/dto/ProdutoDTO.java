@@ -1,43 +1,39 @@
 package com.roncolatoandpedro.soulinstruments.dto;
 
-public class ProdutoDTO extends InstrumentoDTO {
-    private Long id; // id da tabela PRODUTO (SERIAL)
+import com.roncolatoandpedro.soulinstruments.dto.Categoria;
+
+public class ProdutoDTO {
+    private Long idProduto;
     private String marca;
     private String modelo;
+    private String descricao;
     private Double preco;
-    private int quantidade;
-    private String cnpj; // fornecedor_cnpj
+    private int quantidadeEstoque;
+    private Long idInstrumento;
+    private Long idFornecedor;
 
-    // Construtor simples
-    public ProdutoDTO(Long instrumentoId, String nome, Categoria categoria, String marca,
-                      String modelo, Double preco, int quantidade, String cnpj) {
-        super(instrumentoId, nome, categoria); // herda dados do Instrumento
+    // Construtor padrão
+    public ProdutoDTO() {
+    }
+
+    // Construtor completo
+    public ProdutoDTO(Long idProduto, String marca, String modelo, String descricao, Double preco, int quantidadeEstoque, Long idInstrumento, Long idFornecedor) {
+        this.idProduto = idProduto;
         this.marca = marca;
         this.modelo = modelo;
+        this.descricao = descricao;
         this.preco = preco;
-        this.quantidade = quantidade;
-        this.cnpj = cnpj;
+        this.quantidadeEstoque = quantidadeEstoque;
+        this.idInstrumento = idInstrumento;
+        this.idFornecedor = idFornecedor;
     }
 
-    // Construtor completo (com id do produto)
-    public ProdutoDTO(Long id, Long instrumentoId, String nome, Categoria categoria, String marca,
-                      String modelo, Double preco, int quantidade, String cnpj) {
-        super(instrumentoId, nome, categoria);
-        this.id = id;
-        this.marca = marca;
-        this.modelo = modelo;
-        this.preco = preco;
-        this.quantidade = quantidade;
-        this.cnpj = cnpj;
+    public Long getIdProduto() {
+        return idProduto;
     }
 
-    // Getters e Setters
-    public Long getId() {
-        return id;
-    }
-
-    public void setId(Long id) {
-        this.id = id;
+    public void setIdProduto(Long idProduto) {
+        this.idProduto = idProduto;
     }
 
     public String getMarca() {
@@ -56,6 +52,14 @@ public class ProdutoDTO extends InstrumentoDTO {
         this.modelo = modelo;
     }
 
+    public String getDescricao() {
+        return descricao;
+    }
+
+    public void setDescricao(String descricao) {
+        this.descricao = descricao;
+    }
+
     public Double getPreco() {
         return preco;
     }
@@ -64,24 +68,27 @@ public class ProdutoDTO extends InstrumentoDTO {
         this.preco = preco;
     }
 
-    public int getQuantidade() {
-        return quantidade;
+    public int getQuantidadeEstoque() {
+        return quantidadeEstoque;
     }
 
-    public void setQuantidade(int quantidade) {
-        this.quantidade = quantidade;
+    public void setQuantidadeEstoque(int quantidadeEstoque) {
+        this.quantidadeEstoque = quantidadeEstoque;
     }
 
-    public String getCnpj() {
-        return cnpj;
+    public Long getIdInstrumento() {
+        return idInstrumento;
     }
 
-    public void setCnpj(String cnpj) {
-        this.cnpj = cnpj;
+    public void setIdInstrumento(Long idInstrumento) {
+        this.idInstrumento = idInstrumento;
     }
 
-    public Long getInstrumentoId() {
-        return super.getId();
+    public Long getIdFornecedor() {
+        return idFornecedor;
     }
 
+    public void setIdFornecedor(Long idFornecedor) {
+        this.idFornecedor = idFornecedor;
+    }
 }

@@ -5,61 +5,67 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class PedidoDTO {
-    private Long id; // compatível com o banco
+    private Long idPedido;
     private LocalDate dataPedido;
-    private Double valorPedido; // nome igual ao banco
+    private LocalDate dataEntrega;
+    private Double valorTotal;
+    private Long idFornecedor;
+    private List<ItemPedidoDTO> itens;
 
-    private List<ItemPedidoDTO> itens; // ainda útil se você está montando objetos compostos no back
-
-    public PedidoDTO(Double valorPedido) {
-        this.valorPedido = valorPedido;
-        this.dataPedido = LocalDate.now(); // se quiser definir automaticamente no Java também
+    public PedidoDTO() {
         this.itens = new ArrayList<>();
+        this.valorTotal = 0.0;
     }
 
-    public PedidoDTO(Long id, LocalDate dataPedido, Double valorPedido) {
-        this.id = id;
-        this.dataPedido = dataPedido;
-        this.valorPedido = valorPedido;
-        this.itens = new ArrayList<>();
+    public void calcularValorTotalPedido() {
+        this.valorTotal = 0.0;
+        if (this.itens != null) {
+            for (ItemPedidoDTO item : this.itens) {
+                // Garante que o total do item esteja calculado antes de somar
+                item.calcularValorTotal();
+                this.valorTotal += item.getValorTotal();
+            }
+        }
     }
 
-    public Long getId() {
-        return id;
+    // Getters e Setters
+    public Long getIdPedido() {
+        return idPedido;
     }
-
-    public void setId(Long id) {
-        this.id = id;
+    public void setIdPedido(Long idPedido) {
+        this.idPedido = idPedido;
     }
-
     public LocalDate getDataPedido() {
         return dataPedido;
     }
-
     public void setDataPedido(LocalDate dataPedido) {
         this.dataPedido = dataPedido;
     }
-
-    public Double getValorPedido() {
-        return valorPedido;
+    public LocalDate getDataEntrega() {
+        return dataEntrega;
     }
-
-    public void setValorPedido(Double valorPedido) {
-        this.valorPedido = valorPedido;
+    public void setDataEntrega(LocalDate dataEntrega) {
+        this.dataEntrega = dataEntrega;
     }
-
+    public Double getValorTotal() {
+        return valorTotal;
+    }
+    public void setValorTotal(Double valorTotal) {
+        this.valorTotal = valorTotal;
+    }
+    public Long getIdFornecedor() {
+        return idFornecedor;
+    }
+    public void setIdFornecedor(Long idFornecedor) {
+        this.idFornecedor = idFornecedor;
+    }
     public List<ItemPedidoDTO> getItens() {
         return itens;
     }
-
     public void setItens(List<ItemPedidoDTO> itens) {
-        this.itens = itens;
+        this.itens = itens; calcularValorTotalPedido();
     }
-
     public void addItem(ItemPedidoDTO item) {
-        if (this.itens == null) {
-            this.itens = new ArrayList<>();
-        }
-        this.itens.add(item);
+        this.itens.add(item); calcularValorTotalPedido();
     }
 }
