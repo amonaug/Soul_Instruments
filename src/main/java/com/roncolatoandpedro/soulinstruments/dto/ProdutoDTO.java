@@ -91,4 +91,5 @@ public class ProdutoDTO {
     public void setIdFornecedor(Long idFornecedor) {
         this.idFornecedor = idFornecedor;
     }
+
 }
