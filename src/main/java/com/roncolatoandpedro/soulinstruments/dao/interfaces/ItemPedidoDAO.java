@@ -12,5 +12,5 @@ import java.util.List;
 public interface ItemPedidoDAO {
     // O ProdutoDAO será necessário para buscar o preço do produto, por isso referência-lo
     ItemPedidoDTO salvar(ItemPedidoDTO itemPedido, Long pedidoId, ProdutoDAO produtoDAO) throws SQLException;
-    List<ItemPedidoDTO> buscarPorPedidoId(Long pedidoId) throws SQLException;
+    List<ItemPedidoDTO> buscarPorPedidoId(Long idPedido) throws SQLException;
 }
