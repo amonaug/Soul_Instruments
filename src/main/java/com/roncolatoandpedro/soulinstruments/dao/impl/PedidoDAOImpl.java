@@ -28,7 +28,7 @@ public class PedidoDAOImpl implements PedidoDAO {
 
     @Override
     public PedidoDTO salvar(PedidoDTO pedido) throws SQLException {
-        String sqlPedido = "INSERT INTO pedido (data_pedido, data_entrega, valor_total, fornecedor_id) VALUES (?, ?, ?, ?)";
+        String sqlPedido = "INSERT INTO Pedido (dataPedido, dataEntrega, valorTotal, idFornecedor) VALUES (?, ?, ?, ?)";
 
         boolean originalAutoCommit = conexao.getAutoCommit();
         try {
@@ -38,11 +38,11 @@ public class PedidoDAOImpl implements PedidoDAO {
             // e para calcular o valor_total do pedido.
             if (pedido.getItens() != null) {
                 for (ItemPedidoDTO item : pedido.getItens()) {
-                    if (item.getPrecoUnitarioCompra() == 0 && item.getIdProduto() != null) { // Preço ainda não definido
+                    if (item.getValorUnitario() == 0 && item.getIdProduto() != null) { // Preço ainda não definido
                         Optional<ProdutoDTO> produtoOpt = produtoDAO.buscarPorId(item.getIdProduto());
                         if (produtoOpt.isPresent()) {
-                            item.setPrecoUnitarioCompra(produtoOpt.get().getPreco());
-                            item.calcularValorTotalItem(); // DTO calcula o valor do item
+                            item.setValorUnitario(produtoOpt.get().getPreco());
+                            item.calcularValorTotal(); // DTO calcula o valor do item
                         } else {
                             throw new SQLException("Produto com ID " + item.getIdProduto() + " não encontrado.");
                         }
@@ -60,7 +60,7 @@ public class PedidoDAOImpl implements PedidoDAO {
                     stmtPedido.setNull(2, java.sql.Types.DATE);
                 }
                 stmtPedido.setDouble(3, pedido.getValorTotal()); // Agora o valor total está calculado
-                stmtPedido.setLong(4, pedido.getFornecedorId());
+                stmtPedido.setLong(4, pedido.getIdFornecedor());
 
                 int affectedRows = stmtPedido.executeUpdate();
                 if (affectedRows > 0) {
@@ -102,7 +102,7 @@ public class PedidoDAOImpl implements PedidoDAO {
         // (embora o ideal seja que o DTO gerencie isso ao modificar a lista de itens)
         pedido.calcularValorTotalPedido();
 
-        String sql = "UPDATE pedido SET data_entrega = ?, valor_total = ? WHERE id = ?";
+        String sql = "UPDATE Pedido SET dataEntrega = ?, valorTotal = ? WHERE idPedido = ?";
         try (PreparedStatement stmt = conexao.prepareStatement(sql)) {
             if (pedido.getDataEntrega() != null) {
                 stmt.setDate(1, Date.valueOf(pedido.getDataEntrega()));
@@ -116,25 +116,24 @@ public class PedidoDAOImpl implements PedidoDAO {
     }
 
     @Override
-    public void remover(Long id) throws SQLException {
-        String sqlItens = "DELETE FROM item_pedido WHERE pedido_id = ?";
-        String sqlPedido = "DELETE FROM pedido WHERE id = ?";
+    public void remover(Long idPedido, Long idItemPedido) throws SQLException {
+        String sqlItens = "DELETE FROM ItemPedido WHERE idItemPedido = ?";
+        String sqlPedido = "DELETE FROM Pedido WHERE idPedido = ?";
 
         boolean originalAutoCommit = conexao.getAutoCommit();
         try {
             conexao.setAutoCommit(false);
 
             try (PreparedStatement stmtItens = conexao.prepareStatement(sqlItens)) {
-                stmtItens.setLong(1, id);
+                stmtItens.setLong(1, idItemPedido);
                 stmtItens.executeUpdate();
             }
 
             try (PreparedStatement stmtPedido = conexao.prepareStatement(sqlPedido)) {
-                stmtPedido.setLong(1, id);
+                stmtPedido.setLong(1, idItemPedido);
                 int affectedRows = stmtPedido.executeUpdate();
                 if (affectedRows == 0) {
-                    // Opcional: Lançar exceção se o pedido não foi encontrado para remoção
-                    // throw new SQLException("Pedido com ID " + id + " não encontrado para remoção.");
+                    throw new SQLException("Pedido com ID " + idPedido + " não encontrado para remoção.");
                 }
             }
             conexao.commit();
@@ -146,30 +145,31 @@ public class PedidoDAOImpl implements PedidoDAO {
         }
     }
 
+
     private PedidoDTO mapearResultSetParaPedidoDTO(ResultSet rs) throws SQLException {
-        // Note que o construtor de PedidoDTO mudou para não receber valorTotal diretamente
-        PedidoDTO pedido = new PedidoDTO(
-                rs.getLong("id"),
-                rs.getDate("data_pedido").toLocalDate(),
-                rs.getDate("data_entrega") != null ? rs.getDate("data_entrega").toLocalDate() : null,
-                rs.getLong("fornecedor_id")
-        );
-        pedido.setValorTotal(rs.getDouble("valor_total"));
+        PedidoDTO pedido = new PedidoDTO();
+        pedido.setIdPedido(rs.getLong("idPedido"));
+        pedido.setDataPedido(rs.getDate("dataPedido").toLocalDate());
+        if (rs.getDate("dataEntrega") != null) {
+            pedido.setDataEntrega(rs.getDate("dataEntrega").toLocalDate());
+        }
+        pedido.setIdFornecedor(rs.getLong("idFornecedor"));
+        pedido.setValorTotal(rs.getDouble("valorTotal"));
         return pedido;
     }
 
     @Override
-    public Optional<PedidoDTO> buscarPorId(Long id) throws SQLException {
-        String sql = "SELECT * FROM pedido WHERE id = ?";
+    public Optional<PedidoDTO> buscarPorId(Long idPedido) throws SQLException {
+        String sql = "SELECT * FROM Pedido WHERE idPedido = ?";
         PedidoDTO pedido = null;
         try (PreparedStatement stmt = conexao.prepareStatement(sql)) {
-            stmt.setLong(1, id);
+            stmt.setLong(1, idPedido);
             try (ResultSet rs = stmt.executeQuery()) {
                 if (rs.next()) {
                     pedido = mapearResultSetParaPedidoDTO(rs);
                 }
                 if (pedido != null) {
-                    List<ItemPedidoDTO> itens = this.itemPedidoDAO.buscarPorPedidoId(id); // Usa o DAO injetado
+                    List<ItemPedidoDTO> itens = this.itemPedidoDAO.buscarPorPedidoId(idPedido); // Usa o DAO injetado
                     pedido.setItens(itens); // Isso recalculará o valorTotal do pedido no DTO
                     return Optional.of(pedido);
                 }
@@ -178,7 +178,7 @@ public class PedidoDAOImpl implements PedidoDAO {
 
         if (pedido != null) {
             // Carregar os itens do pedido usando ItemPedidoDAO
-            List<ItemPedidoDTO> itens = itemPedidoDAO.buscarPorPedidoId(id);
+            List<ItemPedidoDTO> itens = itemPedidoDAO.buscarPorPedidoId(idPedido);
             pedido.setItens(itens); // Isso também recalculará o valorTotal do pedido
             // Se o valorTotal no banco for o "mestre", você pode carregá-lo
             // e não recalcular, mas geralmente é bom recalcular a partir dos itens para consistência.
@@ -194,7 +194,7 @@ public class PedidoDAOImpl implements PedidoDAO {
     @Override
     public List<PedidoDTO> listarTodos() throws SQLException {
         List<PedidoDTO> pedidos = new ArrayList<>();
-        String sql = "SELECT * FROM pedido ORDER BY data_pedido DESC";
+        String sql = "SELECT * FROM Pedido ORDER BY dataPedido DESC";
         try (Statement stmt = conexao.createStatement();
              ResultSet rs = stmt.executeQuery(sql)) {
             while (rs.next()) {
@@ -210,7 +210,7 @@ public class PedidoDAOImpl implements PedidoDAO {
     @Override
     public List<PedidoDTO> listarPorPeriodo(LocalDate dataInicio, LocalDate dataFim) throws SQLException {
         List<PedidoDTO> pedidos = new ArrayList<>();
-        String sql = "SELECT * FROM pedido WHERE data_pedido BETWEEN ? AND ? ORDER BY data_pedido DESC";
+        String sql = "SELECT * FROM Pedido WHERE dataPedido BETWEEN ? AND ? ORDER BY dataPedido DESC";
         try (PreparedStatement stmt = conexao.prepareStatement(sql)) {
             stmt.setDate(1, Date.valueOf(dataInicio));
             stmt.setDate(2, Date.valueOf(dataFim));
@@ -227,11 +227,11 @@ public class PedidoDAOImpl implements PedidoDAO {
     }
 
     @Override
-    public List<PedidoDTO> listarPorFornecedor(Long fornecedorId) throws SQLException {
+    public List<PedidoDTO> listarPorFornecedor(Long idFornecedor) throws SQLException {
         List<PedidoDTO> pedidos = new ArrayList<>();
-        String sql = "SELECT * FROM pedido WHERE fornecedor_id = ? ORDER BY data_pedido DESC";
+        String sql = "SELECT * FROM Pedido WHERE idFornecedor = ? ORDER BY dataPedido DESC";
         try (PreparedStatement stmt = conexao.prepareStatement(sql)) {
-            stmt.setLong(1, fornecedorId);
+            stmt.setLong(1, idFornecedor);
             try (ResultSet rs = stmt.executeQuery()) {
                 while (rs.next()) {
                     PedidoDTO pedido = mapearResultSetParaPedidoDTO(rs);

@@ -19,34 +19,31 @@ public class ItemPedidoDAOImpl implements ItemPedidoDAO {
     }
 
     @Override
-    public ItemPedidoDTO salvar(ItemPedidoDTO itemPedido, Long pedidoId, ProdutoDAO produtoDAO) throws SQLException {
-        // 1. Buscar o preço do produto
+    public ItemPedidoDTO salvar(ItemPedidoDTO itemPedido, Long idPedido, ProdutoDAO produtoDAO) throws SQLException {
         Optional<ProdutoDTO> produtoOpt = produtoDAO.buscarPorId(itemPedido.getIdProduto());
         if (produtoOpt.isEmpty()) {
             throw new SQLException("Produto com ID " + itemPedido.getIdProduto() + " não encontrado para o item do pedido.");
         }
         ProdutoDTO produto = produtoOpt.get();
-        itemPedido.setPrecoUnitarioCompra(produto.getPreco());
-        itemPedido.calcularValorTotalItem(); // Calcula o valor total do item
+        itemPedido.setValorUnitario(produto.getPreco());
+        itemPedido.calcularValorTotal(); // Calcula o valor total do item
 
-
-
-        // Colunas: id Chave Prim, pedido_id (FK), produto_id (FK), quantidade, preco_unitario_compra
+        // Colunas: idItemPedido Chave Prim, idPedido (FK), idProduto (FK), quantidade, valorUnitario, valorTotal
         // Assumindo que itemPedido.getIdProduto() se refere ao ID da tabela produto
-        String sql = "INSERT INTO item_pedido (pedido_id, produto_id, quantidade, preco_unitario_compra, valor_total_item) VALUES (?, ?, ?, ?, ?)";
+        String sql = "INSERT INTO ItemPedido (idPedido, idProduto, quantidade, valorUnitario, valorTotal) VALUES (?, ?, ?, ?, ?)";
         try (PreparedStatement stmt = conexao.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
-            stmt.setLong(1, pedidoId);
+            stmt.setLong(1, idPedido);
             stmt.setLong(2, itemPedido.getIdProduto()); // Usando o id numérico do produto
             stmt.setInt(3, itemPedido.getQuantidade());
-            stmt.setDouble(4, itemPedido.getPrecoUnitarioCompra());
-            stmt.setDouble(5, itemPedido.getValorTotalItem());
+            stmt.setDouble(4, itemPedido.getValorUnitario());
+            stmt.setDouble(5, itemPedido.getValorTotal());
 
             int affectedRows = stmt.executeUpdate();
             if (affectedRows > 0) {
                 try (ResultSet generatedKeys = stmt.getGeneratedKeys()) {
                     if (generatedKeys.next()) {
-                        itemPedido.setId(generatedKeys.getLong(1));
-                        itemPedido.setIdPedido(pedidoId); // Garante que o pedidoId está no DTO
+                        itemPedido.setIdItemPedido(generatedKeys.getLong(1));
+                        itemPedido.setIdPedido(idPedido); // Garante que o pedidoId está no DTO
                     } else {
                         throw new SQLException("Falha ao obter o ID gerado para o item do pedido.");
                     }
@@ -60,23 +57,22 @@ public class ItemPedidoDAOImpl implements ItemPedidoDAO {
 
     private ItemPedidoDTO mapearResultSetParaItemPedidoDTO(ResultSet rs) throws SQLException {
         ItemPedidoDTO item = new ItemPedidoDTO();
-        item.setId(rs.getLong("id"));
-        item.setIdPedido(rs.getLong("pedido_id"));
-        item.setIdProduto(rs.getLong("produto_id"));
+        item.setIdItemPedido(rs.getLong("idItemPedido"));
+        item.setIdPedido(rs.getLong("idPedido"));
+        item.setIdProduto(rs.getLong("idProduto"));
         item.setQuantidade(rs.getInt("quantidade"));
-        item.setPrecoUnitarioCompra(rs.getDouble("preco_unitario_compra"));
-        item.setValorTotalItem(rs.getDouble("valor_total_item"));
-        item.calcularValorTotalItem();
-
+        item.setValorUnitario(rs.getDouble("valorUnitario"));
+        item.calcularValorTotal();
+        item.setValorTotal(rs.getDouble("valorTotal"));
         return item;
     }
 
     @Override
-    public List<ItemPedidoDTO> buscarPorPedidoId(Long pedidoId) throws SQLException {
+    public List<ItemPedidoDTO> buscarPorPedidoId(Long idPedido) throws SQLException {
         List<ItemPedidoDTO> itens = new ArrayList<>();
-        String sql = "SELECT * FROM item_pedido WHERE pedido_id = ?";
+        String sql = "SELECT * FROM ItemPedido WHERE idPedido = ?";
         try (PreparedStatement stmt = conexao.prepareStatement(sql)) {
-            stmt.setLong(1, pedidoId);
+            stmt.setLong(1, idPedido);
             try (ResultSet rs = stmt.executeQuery()) {
                 while (rs.next()) {
                     itens.add(mapearResultSetParaItemPedidoDTO(rs));

@@ -1,34 +1,31 @@
 package com.roncolatoandpedro.soulinstruments.dao;
 
-import com.roncolatoandpedro.soulinstruments.dao.impl.FornecedorDAOImpl;
-import com.roncolatoandpedro.soulinstruments.dao.impl.ItemPedidoDAOImpl;
-import com.roncolatoandpedro.soulinstruments.dao.impl.PedidoDAOImpl;
-import com.roncolatoandpedro.soulinstruments.dao.impl.ProdutoDAOImpl;
-import com.roncolatoandpedro.soulinstruments.dao.interfaces.FornecedorDAO;
-import com.roncolatoandpedro.soulinstruments.dao.interfaces.ItemPedidoDAO;
-import com.roncolatoandpedro.soulinstruments.dao.interfaces.PedidoDAO;
-import com.roncolatoandpedro.soulinstruments.dao.interfaces.ProdutoDAO;
+import com.roncolatoandpedro.soulinstruments.dao.impl.*;
+import com.roncolatoandpedro.soulinstruments.dao.interfaces.*;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 
 public class DAOFactory {
-    private static final String URL = "jbdc/postgresql://localhost:5433/soulinstruments";
-    private static final String USER = "postgres";
-    private static final String PASSWORD = "1234";
+    private static final String DB_URL = "jdbc:postgresql://localhost:5432/SoulInstruments";
+    private static final String DB_USER = "postgres";
+    private static final String DB_PASSWORD = "sua_senha_aqui";
+
     static {
         try {
             Class.forName("org.postgresql.Driver");
         } catch (ClassNotFoundException e) {
-            System.err.println("Driver PostgreSQL JDBC não encontrado. Verifique o classpath.");
-            e.printStackTrace();
+            // Em uma aplicação Swing, um erro aqui é fatal e deve ser comunicado.
+            // Lançar uma RuntimeException para parar a aplicação é uma abordagem válida.
+            throw new ExceptionInInitializerError("Driver PostgreSQL JDBC não encontrado. Verifique o classpath.", e);
         }
     }
-    public static Connection getConexao() throws Exception{
-        Class.forName("org.postgresql.Driver");
-        return DriverManager.getConnection(URL, USER, PASSWORD);
+    private static Connection getConexao() throws SQLException {
+        return DriverManager.getConnection(DB_URL, DB_USER, DB_PASSWORD);
     }
+
+    // --- MÉTODOS FACTORY PARA CRIAR CADA DAO ---
     public static FornecedorDAO CreateFornecedorDAO() throws Exception{
         return new FornecedorDAOImpl(getConexao());
     }
@@ -42,31 +39,16 @@ public class DAOFactory {
         // Se ItemPedidoDAOImpl não precisar de outras dependências DAO no construtor
         return new ItemPedidoDAOImpl(getConexao());
     }
+
     public static PedidoDAO criarPedidoDAO() throws SQLException {
-        // PedidoDAOImpl precisa de ItemPedidoDAO e ProdutoDAO
-        // Neste caso, o DAOFactory precisa instanciá-los. Linhas 56 e 57
-        Connection conexao = getConexao(); // Obter a conexão uma vez para todos os DAOs nesta operação
+        // Obter a conexão uma vez. Esta mesma conexão será usada por todos os DAOs.
+        Connection conexao = getConexao();
 
-        // Criar as dependências DAO usando a mesma conexão para consistência transacional
-        // se PedidoDAOImpl for controlar a transação para todos eles.
-        // No entanto, no modelo atual, cada DAOImpl gerencia sua própria transação
-        // (exceto PedidoDAOImpl que gerencia para si e para os itens).
+        // Cria as dependências que PedidoDAOImpl precisa, passando a mesma conexão.
+        ProdutoDAO produtoDAO = new ProdutoDAOImpl(conexao);
+        ItemPedidoDAO itemPedidoDAO = new ItemPedidoDAOImpl(conexao);
 
-        // Se PedidoDAOImpl lida com transações internamente para si e seus itens:
-        ProdutoDAO produtoDAO = new ProdutoDAOImpl(conexao); // Usando a mesma conexão
-        ItemPedidoDAO itemPedidoDAO = new ItemPedidoDAOImpl(conexao); // Usando a mesma conexão
-
-        // Se PedidoDAOImpl for controlar a transação para produtoDAO e itemPedidoDAO,
-        // a conexão passada para eles deve ser a mesma e PedidoDAOImpl faria conexao.commit/rollback.
-        // Na nossa implementação atual de PedidoDAOImpl, ele já recebe os DAOs, e a conexão
-        // principal é usada para as operações do pedido, e os DAOs de item/produto usam a conexão deles.
-        // Para garantir que tudo ocorra na mesma transação controlada por PedidoDAOImpl,
-        // é crucial que PedidoDAOImpl, ItemPedidoDAOImpl e ProdutoDAOImpl (quando chamados por PedidoDAOImpl)
-        // operem sobre a *mesma instância* de Connection, e que PedidoDAOImpl controle o commit/rollback.
-
-        // Ajuste para DAOFactory:
-        // ProdutoDAO produtoDAO = new ProdutoDAOImpl(conexao); // Passa a conexão
-        // ItemPedidoDAO itemPedidoDAO = new ItemPedidoDAOImpl(conexao); // Passa a conexão
+        // Retorna a instância do PedidoDAOImpl com suas dependências.
         return new PedidoDAOImpl(conexao, itemPedidoDAO, produtoDAO);
     }
 }
