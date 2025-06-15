@@ -129,5 +129,32 @@ public class ProdutoDAOImpl implements ProdutoDAO {
                 produtos.add(mapearResultSetParaProdutoDTO(rs));
             }
         return produtos;
+    }
+
+    @Override
+    public List<ProdutoDTO> buscarPorNome(String nome){
+        List<ProdutoDTO> lista = new ArrayList<>();
+        String sql = "SELECT * FROM produtos WHERE nome LIKE ?";
+
+        try(PreparedStatement stmt = conexao.prepareStatement(sql)) {
+            stmt.setString(1, "%"+nome+"%");
+            ResultSet rs = stmt.executeQuery();
+            while(rs.next()){
+                ProdutoDTO produto = new ProdutoDTO();
+                produto.setIdProduto(rs.getLong("idProduto"));
+                produto.setMarca(rs.getString("marca"));
+                produto.setModelo(rs.getString("modelo"));
+                produto.setDescricao(rs.getString("descricao"));
+                produto.setPreco(rs.getDouble("preco"));
+                produto.setQuantidadeEstoque(rs.getInt("quantidadeEstoque"));
+                produto.setIdInstrumento(rs.getLong("idInstrumento"));
+                produto.setIdFornecedor(rs.getLong("idFornecedor"));
+                lista.add(produto);
+            }
+        }catch (SQLException e){
+            return null;
         }
+
+        return lista;
+    }
 }

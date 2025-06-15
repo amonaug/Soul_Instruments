@@ -8,6 +8,7 @@ import java.sql.DriverManager;
 import java.sql.SQLException;
 
 public class DAOFactory {
+
     private static final String DB_URL = "jdbc:postgresql://localhost:5432/SoulInstruments";
     private static final String DB_USER = "postgres";
     private static final String DB_PASSWORD = "sua_senha_aqui";
@@ -16,39 +17,31 @@ public class DAOFactory {
         try {
             Class.forName("org.postgresql.Driver");
         } catch (ClassNotFoundException e) {
-            // Em uma aplicação Swing, um erro aqui é fatal e deve ser comunicado.
-            // Lançar uma RuntimeException para parar a aplicação é uma abordagem válida.
-            throw new ExceptionInInitializerError("Driver PostgreSQL JDBC não encontrado. Verifique o classpath.", e);
+            throw new ExceptionInInitializerError("Driver PostgreSQL não encontrado.");
         }
     }
-    private static Connection getConexao() throws SQLException {
+
+    public static Connection getConexao() throws SQLException {
         return DriverManager.getConnection(DB_URL, DB_USER, DB_PASSWORD);
     }
 
-    // --- MÉTODOS FACTORY PARA CRIAR CADA DAO ---
-    public static FornecedorDAO CreateFornecedorDAO() throws Exception{
-        return new FornecedorDAOImpl(getConexao());
-    }
+    // --- MÉTODOS FACTORY ---
     public static ProdutoDAO criarProdutoDAO() throws SQLException {
         return new ProdutoDAOImpl(getConexao());
     }
+
     public static FornecedorDAO criarFornecedorDAO() throws SQLException {
         return new FornecedorDAOImpl(getConexao());
     }
+
     public static ItemPedidoDAO criarItemPedidoDAO() throws SQLException {
-        // Se ItemPedidoDAOImpl não precisar de outras dependências DAO no construtor
         return new ItemPedidoDAOImpl(getConexao());
     }
 
     public static PedidoDAO criarPedidoDAO() throws SQLException {
-        // Obter a conexão uma vez. Esta mesma conexão será usada por todos os DAOs.
         Connection conexao = getConexao();
-
-        // Cria as dependências que PedidoDAOImpl precisa, passando a mesma conexão.
         ProdutoDAO produtoDAO = new ProdutoDAOImpl(conexao);
         ItemPedidoDAO itemPedidoDAO = new ItemPedidoDAOImpl(conexao);
-
-        // Retorna a instância do PedidoDAOImpl com suas dependências.
         return new PedidoDAOImpl(conexao, itemPedidoDAO, produtoDAO);
     }
 }

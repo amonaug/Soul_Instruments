@@ -19,17 +19,17 @@ public class FornecedorDAOImpl implements FornecedorDAO {
 
     @Override
     public FornecedorDTO salvar(FornecedorDTO fornecedor) throws SQLException {
-        String sql = "INSERT INTO Fornecedor (nomeFornecedor, cnpj, descricao) VALUES (?, ?, ?)";
+        String sql = "INSERT INTO fornecedor (nomeFornecedor, cnpj, descricao) VALUES (?, ?, ?)";
 
         try(PreparedStatement stmt = conexao.prepareStatement(sql,Statement.RETURN_GENERATED_KEYS)){
             stmt.setString(1, fornecedor.getNomeFornecedor());
             stmt.setString(2, fornecedor.getCnpj());
             stmt.setString(3, fornecedor.getDescricao());
             int affectedRows = stmt.executeUpdate(); //irá receber o numero de colunas afetadas
-            if(affectedRows > 0){ //se for maior que  (o que é bom)
+            if(affectedRows > 0){ //se for maior que (o que é bom)
                 try (ResultSet generatedKeys = stmt.getGeneratedKeys()) {
                     if (generatedKeys.next()) {
-                        fornecedor.setIdFornecedor(generatedKeys.getLong(1)); //obtem o id gerado para o fornecedor
+                        fornecedor.setId(generatedKeys.getLong(1)); //obtem o id gerado para o fornecedor
                     } else {
                         throw new SQLException("Falha ao obter o ID gerado para o fornecedor");
                     }
@@ -45,24 +45,24 @@ public class FornecedorDAOImpl implements FornecedorDAO {
 
     @Override
     public void atualizar(FornecedorDTO fornecedor) throws SQLException {
-        String sql = "UPDATE Fornecedor SET nomeFornecedor = ?, cnpj = ?, descricao = ? WHERE idFornecedor = ?";
+        String sql = "UPDATE fornecedor SET nome_fantasia = ?, cnpj = ?, descricao = ? WHERE id = ?";
         try (PreparedStatement stmt = conexao.prepareStatement(sql)) {
             stmt.setString(1, fornecedor.getNomeFornecedor());
             stmt.setString(2, fornecedor.getCnpj());
             stmt.setString(3, fornecedor.getDescricao());
-            stmt.setLong(4, fornecedor.getIdFornecedor());
+            stmt.setLong(4, fornecedor.getId());
             stmt.executeUpdate();
         }
     }
 
 
     @Override
-    public void remover(Long idFornecedor) throws SQLException {
+    public void remover(Long id) throws SQLException {
         // Pedro Adicionar lógica para verificar/tratar dependências (produtos, pedidos) antes de remover,
         // ou configurar o banco para ON DELETE CASCADE/SET NULL, se apropriado.
-        String sql = "DELETE FROM Fornecedor WHERE idFornecedor = ?";
+        String sql = "DELETE FROM fornecedor WHERE id = ?";
         try (PreparedStatement stmt = conexao.prepareStatement(sql)) {
-            stmt.setLong(1, idFornecedor);
+            stmt.setLong(1, id);
             stmt.executeUpdate();
         }
     }
@@ -70,18 +70,18 @@ public class FornecedorDAOImpl implements FornecedorDAO {
 
     private FornecedorDTO mapearResultSetParaFornecedorDTO(ResultSet rs) throws SQLException {
         return new FornecedorDTO(
-                rs.getLong("idFornecedor"),
-                rs.getString("nomeFornecedor"),
+                rs.getLong("id"),
+                rs.getString("nome_fantasia"),
                 rs.getString("cnpj"),
                 rs.getString("descricao")
         );
     }
 
     @Override
-    public Optional<FornecedorDTO> buscarPorId(Long idFornecedor) throws SQLException {
-        String sql = "SELECT * FROM Fornecedor WHERE idFornecedor = ?";
+    public Optional<FornecedorDTO> buscarPorId(Long id) throws SQLException {
+        String sql = "SELECT * FROM fornecedor WHERE id = ?";
         try (PreparedStatement stmt = conexao.prepareStatement(sql)) {
-            stmt.setLong(1, idFornecedor);
+            stmt.setLong(1, id);
             try (ResultSet rs = stmt.executeQuery()) {
                 if (rs.next()) {
                     return Optional.of(mapearResultSetParaFornecedorDTO(rs));
@@ -94,7 +94,7 @@ public class FornecedorDAOImpl implements FornecedorDAO {
 
     @Override
     public Optional<FornecedorDTO> buscarPorCnpj(String cnpj) throws SQLException {
-        String sql = "SELECT * FROM Fornecedor WHERE cnpj = ?";
+        String sql = "SELECT * FROM fornecedor WHERE cnpj = ?";
         try (PreparedStatement stmt = conexao.prepareStatement(sql)) {
             stmt.setString(1, cnpj);
             try (ResultSet rs = stmt.executeQuery()) {
@@ -109,7 +109,7 @@ public class FornecedorDAOImpl implements FornecedorDAO {
     @Override
     public List<FornecedorDTO> listarTodos() throws SQLException {
         List<FornecedorDTO> fornecedores = new ArrayList<>();
-        String sql = "SELECT * FROM Fornecedor ORDER BY nomeFornecedor";
+        String sql = "SELECT * FROM fornecedor ORDER BY nome_fantasia";
         try (Statement stmt = conexao.createStatement();
              ResultSet rs = stmt.executeQuery(sql)) {
             while (rs.next()) {
@@ -118,6 +118,32 @@ public class FornecedorDAOImpl implements FornecedorDAO {
         }
         return fornecedores;
     }
+
+    @Override
+    public List<FornecedorDTO> buscarFornecedoresPorNome(String nomeParcial) {
+        List<FornecedorDTO> lista = new ArrayList<>();
+        String sql = "SELECT * FROM fornecedor WHERE nome_fantasia LIKE ?";
+
+        try (PreparedStatement stmt = conexao.prepareStatement(sql)) {
+            stmt.setString(1, nomeParcial + "%");
+            try (ResultSet rs = stmt.executeQuery()) {
+                while (rs.next()) {
+                    FornecedorDTO f = new FornecedorDTO();
+                    f.setId(rs.getLong("id"));
+                    f.setNomeFornecedor(rs.getString("nome_fantasia"));
+                    f.setCnpj(rs.getString("cnpj"));
+                    f.setDescricao(rs.getString("descricao"));
+                    lista.add(f);
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+        return lista;
+    }
+
+
 
 
 }

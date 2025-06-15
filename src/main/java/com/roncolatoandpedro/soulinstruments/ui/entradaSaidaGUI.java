@@ -4,6 +4,8 @@
  */
 package com.roncolatoandpedro.soulinstruments.ui;
 
+import java.sql.SQLException;
+
 /**
  *
  * @author pedro
@@ -185,7 +187,13 @@ public class entradaSaidaGUI extends javax.swing.JFrame {
     }//GEN-LAST:event_btnEstoqueActionPerformed
 
     private void btnAtualizarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnAtualizarActionPerformed
-        java.awt.EventQueue.invokeLater(() -> new atualizarGUI().setVisible(true));
+        java.awt.EventQueue.invokeLater(() -> {
+            try {
+                new atualizarGUI().setVisible(true);
+            } catch (SQLException e) {
+                throw new RuntimeException(e);
+            }
+        });
     }//GEN-LAST:event_btnAtualizarActionPerformed
 
     private void btnEntradaSaidaActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnEntradaSaidaActionPerformed

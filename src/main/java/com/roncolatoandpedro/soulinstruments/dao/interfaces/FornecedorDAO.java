@@ -13,4 +13,6 @@ public interface FornecedorDAO {
     Optional<FornecedorDTO> buscarPorId(Long idFornecedor) throws SQLException;
     Optional<FornecedorDTO> buscarPorCnpj(String cnpj) throws SQLException;
     List<FornecedorDTO> listarTodos() throws SQLException;
+
+    List<FornecedorDTO> buscarFornecedoresPorNome(String nomeParcial);
 }

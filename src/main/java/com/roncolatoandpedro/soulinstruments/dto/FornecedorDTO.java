@@ -1,9 +1,5 @@
 package com.roncolatoandpedro.soulinstruments.dto;
 
-import com.roncolatoandpedro.soulinstruments.model.Fornecedor;
-import com.roncolatoandpedro.soulinstruments.model.Produto;
-
-import java.util.ArrayList;
 
 public class FornecedorDTO {
     private Long id;
@@ -50,5 +46,10 @@ public class FornecedorDTO {
 
     public void setDescricao(String descricao) {
         this.descricao = descricao;
+    }
+
+    @Override
+    public String toString() {
+        return nomeFornecedor;
     }
 }

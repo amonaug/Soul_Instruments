@@ -4,6 +4,19 @@
  */
 package com.roncolatoandpedro.soulinstruments.ui;
 
+import com.roncolatoandpedro.soulinstruments.controller.FornecedorController;
+import com.roncolatoandpedro.soulinstruments.dao.DAOFactory;
+import com.roncolatoandpedro.soulinstruments.dao.impl.FornecedorDAOImpl;
+import com.roncolatoandpedro.soulinstruments.dao.interfaces.FornecedorDAO;
+import com.roncolatoandpedro.soulinstruments.dto.FornecedorDTO;
+
+import javax.swing.*;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
+import java.awt.*;
+import java.sql.SQLException;
+import java.util.List;
+
 /**
  *
  * @author pedro
@@ -11,11 +24,11 @@ package com.roncolatoandpedro.soulinstruments.ui;
 public class atualizarGUI extends javax.swing.JFrame {
     
     private static final java.util.logging.Logger logger = java.util.logging.Logger.getLogger(atualizarGUI.class.getName());
-
+    FornecedorDAOImpl fornecedorDao = new FornecedorDAOImpl(DAOFactory.getConexao());
     /**
      * Creates new form janelaPrincipalGUI
      */
-    public atualizarGUI() {
+    public atualizarGUI() throws SQLException {
         initComponents();
     }
 
@@ -28,6 +41,7 @@ public class atualizarGUI extends javax.swing.JFrame {
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
     private void initComponents() {
 
+        jPopupMenu1 = new javax.swing.JPopupMenu();
         jPanel1 = new javax.swing.JPanel();
         jPanel4 = new javax.swing.JPanel();
         jLabel1 = new javax.swing.JLabel();
@@ -35,7 +49,46 @@ public class atualizarGUI extends javax.swing.JFrame {
         btnEstoque = new javax.swing.JButton();
         btnAtualizar = new javax.swing.JButton();
         btnEntradaSaida = new javax.swing.JButton();
+        comBoxCategoria = new javax.swing.JComboBox<>();
+        jLabel4 = new javax.swing.JLabel();
+        jLabel5 = new javax.swing.JLabel();
+        txtNome = new javax.swing.JTextField();
+        jLabel6 = new javax.swing.JLabel();
+        jLabel7 = new javax.swing.JLabel();
+        jLabel8 = new javax.swing.JLabel();
+        txtMarca2 = new javax.swing.JTextField();
+        jLabel10 = new javax.swing.JLabel();
+        txtFornecedor = new javax.swing.JTextField();
         jPanel2 = new javax.swing.JPanel();
+
+        txtFornecedor.getComponent().addComponentListener(new DocumentListener() {
+            public void insertUpdate(DocumentEvent e) { mostrarSugestoes();}
+            public void removeUpdate(DocumentEvent e) {mostrarSugestoes();}
+            public void changedUpdate(DocumentEvent e) {mostrarSugestoes();}
+
+            public void mostrarSugestoes() {
+                String text = txtFornecedor.getText();
+                if(text.isEmpty()) {
+                    jPopupMenu1.setVisible(false);
+                    return;
+                }
+
+                List<FornecedorDTO> fornecedores = fornecedorDao.buscarFornecedoresPorNome(text);
+                DefaultListModel<FornecedorDTO> modelo = new DefaultListModel<>();
+                for(FornecedorDTO fornecedor : fornecedores) {
+                    modelo.addElement(fornecedor);
+                }
+
+                if (modelo.isEmpty()) {
+                    jPopupMenu1.setVisible(false);
+                    return;
+                }
+                suggestionList.setModel(modelo);
+                suggestionList.setPreferredSize(new Dimension(txtFornecedor.getWidth(), Math.min(modelo.getSize() * 20, 150)));
+
+                jPopupMenu1.show(txtFornecedor, 0, txtFornecedor.getHeight());
+            }
+        });
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
 
@@ -91,7 +144,7 @@ public class atualizarGUI extends javax.swing.JFrame {
             .addGroup(jPanel4Layout.createSequentialGroup()
                 .addContainerGap()
                 .addComponent(jLabel1)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 383, Short.MAX_VALUE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 347, Short.MAX_VALUE)
                 .addComponent(btnHome)
                 .addGap(37, 37, 37)
                 .addComponent(btnEstoque)
@@ -115,17 +168,120 @@ public class atualizarGUI extends javax.swing.JFrame {
                 .addContainerGap(14, Short.MAX_VALUE))
         );
 
+        comBoxCategoria.setBackground(new java.awt.Color(21, 22, 27));
+        comBoxCategoria.setForeground(new java.awt.Color(255, 255, 255));
+        comBoxCategoria.setModel(new javax.swing.DefaultComboBoxModel<>(new String[] { "SOPRO", "CORDAS", "PERCUSSAO", "ELETRONICO" }));
+        comBoxCategoria.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                comBoxCategoriaActionPerformed(evt);
+            }
+        });
+
+        jLabel4.setBackground(new java.awt.Color(21, 22, 27));
+        jLabel4.setFont(new java.awt.Font("Liberation Sans", 1, 15)); // NOI18N
+        jLabel4.setForeground(new java.awt.Color(255, 255, 255));
+        jLabel4.setText("CATEGORIA");
+
+        jLabel5.setBackground(new java.awt.Color(21, 22, 27));
+        jLabel5.setFont(new java.awt.Font("Liberation Sans", 1, 15)); // NOI18N
+        jLabel5.setForeground(new java.awt.Color(255, 255, 255));
+        jLabel5.setText("NOME");
+
+        txtNome.setBackground(new java.awt.Color(22, 21, 27));
+        txtNome.setForeground(new java.awt.Color(255, 255, 255));
+        txtNome.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                txtNomeActionPerformed(evt);
+            }
+        });
+
+        jLabel6.setBackground(new java.awt.Color(21, 22, 27));
+        jLabel6.setFont(new java.awt.Font("Liberation Sans", 1, 15)); // NOI18N
+        jLabel6.setForeground(new java.awt.Color(255, 255, 255));
+        jLabel6.setText("MARCA");
+
+        jLabel7.setBackground(new java.awt.Color(21, 22, 27));
+        jLabel7.setFont(new java.awt.Font("Liberation Sans", 1, 15)); // NOI18N
+        jLabel7.setForeground(new java.awt.Color(255, 255, 255));
+
+        jLabel8.setBackground(new java.awt.Color(21, 22, 27));
+        jLabel8.setFont(new java.awt.Font("Liberation Sans", 1, 15)); // NOI18N
+        jLabel8.setForeground(new java.awt.Color(255, 255, 255));
+
+        txtMarca2.setBackground(new java.awt.Color(22, 21, 27));
+        txtMarca2.setForeground(new java.awt.Color(255, 255, 255));
+        txtMarca2.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                txtMarca2ActionPerformed(evt);
+            }
+        });
+
+        jLabel10.setBackground(new java.awt.Color(21, 22, 27));
+        jLabel10.setFont(new java.awt.Font("Liberation Sans", 1, 15)); // NOI18N
+        jLabel10.setForeground(new java.awt.Color(255, 255, 255));
+        jLabel10.setText("FORNECEDOR");
+
+        txtFornecedor.setBackground(new java.awt.Color(22, 21, 27));
+        txtFornecedor.setForeground(new java.awt.Color(255, 255, 255));
+        txtFornecedor.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                txtFornecedorActionPerformed(evt);
+            }
+        });
+
         javax.swing.GroupLayout jPanel1Layout = new javax.swing.GroupLayout(jPanel1);
         jPanel1.setLayout(jPanel1Layout);
         jPanel1Layout.setHorizontalGroup(
             jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addComponent(jPanel4, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+            .addGroup(jPanel1Layout.createSequentialGroup()
+                .addGap(350, 350, 350)
+                .addComponent(jLabel7)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                .addComponent(jLabel8))
+            .addGroup(jPanel1Layout.createSequentialGroup()
+                .addGap(44, 44, 44)
+                .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addComponent(txtFornecedor, javax.swing.GroupLayout.PREFERRED_SIZE, 215, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
+                        .addComponent(jLabel6)
+                        .addComponent(jLabel5)
+                        .addComponent(jLabel4)
+                        .addComponent(txtNome)
+                        .addComponent(comBoxCategoria, 0, 215, Short.MAX_VALUE))
+                    .addComponent(jLabel10)
+                    .addComponent(txtMarca2, javax.swing.GroupLayout.PREFERRED_SIZE, 215, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
         );
         jPanel1Layout.setVerticalGroup(
             jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(jPanel1Layout.createSequentialGroup()
-                .addComponent(jPanel4, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addGap(0, 640, Short.MAX_VALUE))
+                .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addGroup(jPanel1Layout.createSequentialGroup()
+                        .addComponent(jPanel4, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addGap(102, 102, 102)
+                        .addComponent(jLabel4)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addComponent(comBoxCategoria, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addGap(24, 24, 24)
+                        .addComponent(jLabel5)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addComponent(txtNome, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addGap(18, 18, 18)
+                        .addComponent(jLabel6)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                        .addComponent(txtMarca2, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addGap(18, 18, 18)
+                        .addComponent(jLabel10)
+                        .addGap(30, 30, 30))
+                    .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel1Layout.createSequentialGroup()
+                        .addGap(0, 394, Short.MAX_VALUE)
+                        .addComponent(txtFornecedor, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)))
+                .addComponent(jLabel8)
+                .addGap(60, 60, 60)
+                .addComponent(jLabel7)
+                .addGap(0, 440, Short.MAX_VALUE))
         );
 
         javax.swing.GroupLayout jPanel2Layout = new javax.swing.GroupLayout(jPanel2);
@@ -149,7 +305,7 @@ public class atualizarGUI extends javax.swing.JFrame {
                 .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
             .addGroup(layout.createSequentialGroup()
                 .addComponent(jPanel1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addGap(0, 76, Short.MAX_VALUE))
+                .addGap(0, 52, Short.MAX_VALUE))
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -163,7 +319,7 @@ public class atualizarGUI extends javax.swing.JFrame {
         pack();
     }// </editor-fold>//GEN-END:initComponents
 
-    private void btnHomeActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnHomeActionPerformed
+    private void btnHomeActionPerformed(java.awt.event.ActionEvent evt) {                                        
         try {
             for (javax.swing.UIManager.LookAndFeelInfo info : javax.swing.UIManager.getInstalledLookAndFeels()) {
                 if ("Nimbus".equals(info.getName())) {
@@ -192,15 +348,42 @@ public class atualizarGUI extends javax.swing.JFrame {
         java.awt.EventQueue.invokeLater(() -> new entradaSaidaGUI().setVisible(true));
     }//GEN-LAST:event_btnEntradaSaidaActionPerformed
 
+    private void comBoxCategoriaActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_comBoxCategoriaActionPerformed
+        // TODO add your handling code here:
+    }//GEN-LAST:event_comBoxCategoriaActionPerformed
+
+    private void txtNomeActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_txtNomeActionPerformed
+        // TODO add your handling code here:
+    }//GEN-LAST:event_txtNomeActionPerformed
+
+    private void txtMarca2ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_txtMarca2ActionPerformed
+        // TODO add your handling code here:
+    }//GEN-LAST:event_txtMarca2ActionPerformed
+
+    private void txtFornecedorActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_txtFornecedorActionPerformed
+        // TODO add your handling code here:
+    }//GEN-LAST:event_txtFornecedorActionPerformed
+
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton btnAtualizar;
     private javax.swing.JButton btnEntradaSaida;
     private javax.swing.JButton btnEstoque;
     private javax.swing.JButton btnHome;
+    private javax.swing.JComboBox<String> comBoxCategoria;
     private javax.swing.JLabel jLabel1;
+    private javax.swing.JLabel jLabel10;
+    private javax.swing.JLabel jLabel4;
+    private javax.swing.JLabel jLabel5;
+    private javax.swing.JLabel jLabel6;
+    private javax.swing.JLabel jLabel7;
+    private javax.swing.JLabel jLabel8;
     private javax.swing.JPanel jPanel1;
     private javax.swing.JPanel jPanel2;
     private javax.swing.JPanel jPanel4;
+    private javax.swing.JPopupMenu jPopupMenu1;
+    private javax.swing.JTextField txtFornecedor;
+    private javax.swing.JTextField txtMarca2;
+    private javax.swing.JTextField txtNome;
     // End of variables declaration//GEN-END:variables
 }
