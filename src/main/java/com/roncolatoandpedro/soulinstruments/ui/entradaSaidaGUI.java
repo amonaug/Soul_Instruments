@@ -4,21 +4,52 @@
  */
 package com.roncolatoandpedro.soulinstruments.ui;
 
+import com.roncolatoandpedro.soulinstruments.dao.DAOFactory;
+import com.roncolatoandpedro.soulinstruments.dao.impl.ProdutoDAOImpl;
+import com.roncolatoandpedro.soulinstruments.dto.ProdutoDTO;
+
+import javax.swing.*;
+import java.awt.*;
+import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  *
  * @author pedro
  */
 public class entradaSaidaGUI extends javax.swing.JFrame {
-    
-    private static final java.util.logging.Logger logger = java.util.logging.Logger.getLogger(entradaSaidaGUI.class.getName());
+
+    private static final Logger logger = Logger.getLogger(entradaSaidaGUI.class.getName());
+
+    private ProdutoDAOImpl produtoImpl;
 
     /**
-     * Creates new form janelaPrincipalGUI
+     * Creates new form entradaSaidaGUI
      */
     public entradaSaidaGUI() {
         initComponents();
+        try {
+            // Inicializa a DAO de Produto usando a fábrica de conexões
+            Connection connection = DAOFactory.getConexao();
+            this.produtoImpl = new ProdutoDAOImpl(connection);
+        } catch (SQLException e) {
+            logger.log(Level.SEVERE, "Erro ao inicializar ProdutoDAOImpl para entrada/saída: " + e.getMessage(), e);
+            JOptionPane.showMessageDialog(this,
+                    "Erro ao conectar ao banco de dados para operações de estoque: " + e.getMessage(),
+                    "Erro de Inicialização",
+                    JOptionPane.ERROR_MESSAGE);
+            // Se a conexão for crítica, você pode querer fechar a aplicação ou o frame.
+            // dispose();
+            // System.exit(1); // Ou sair da aplicação
+        }
+
+        // Popula o ComboBox de Tipo de Operação
+        comBoxTipoOperacao.removeAllItems();
+        comBoxTipoOperacao.addItem("ENTRADA");
+        comBoxTipoOperacao.addItem("SAIDA");
+        comBoxTipoOperacao.setSelectedIndex(0); // Seleciona "ENTRADA" por padrão
     }
 
     /**
@@ -38,6 +69,18 @@ public class entradaSaidaGUI extends javax.swing.JFrame {
         btnAtualizar = new javax.swing.JButton();
         btnEntradaSaida = new javax.swing.JButton();
         jPanel2 = new javax.swing.JPanel();
+        jLabel2 = new javax.swing.JLabel();
+        txtProdutoId = new javax.swing.JTextField();
+        jLabel3 = new javax.swing.JLabel();
+        txtQuantidade = new javax.swing.JTextField();
+        jLabel4 = new javax.swing.JLabel();
+        comBoxTipoOperacao = new javax.swing.JComboBox<>();
+        btnConfirmarOperacao = new javax.swing.JButton();
+        jLabel5 = new javax.swing.JLabel();
+        lblProdutoNome = new javax.swing.JLabel();
+        btnBuscarProduto = new javax.swing.JButton();
+        jLabel7 = new javax.swing.JLabel();
+        lblEstoqueAtual = new javax.swing.JLabel();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
 
@@ -89,125 +132,372 @@ public class entradaSaidaGUI extends javax.swing.JFrame {
         javax.swing.GroupLayout jPanel4Layout = new javax.swing.GroupLayout(jPanel4);
         jPanel4.setLayout(jPanel4Layout);
         jPanel4Layout.setHorizontalGroup(
-            jPanel4Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(jPanel4Layout.createSequentialGroup()
-                .addContainerGap()
-                .addComponent(jLabel1)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 383, Short.MAX_VALUE)
-                .addComponent(btnHome)
-                .addGap(37, 37, 37)
-                .addComponent(btnEstoque)
-                .addGap(43, 43, 43)
-                .addComponent(btnAtualizar)
-                .addGap(32, 32, 32)
-                .addComponent(btnEntradaSaida)
-                .addGap(130, 130, 130))
+                jPanel4Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                        .addGroup(jPanel4Layout.createSequentialGroup()
+                                .addContainerGap()
+                                .addComponent(jLabel1)
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 383, Short.MAX_VALUE)
+                                .addComponent(btnHome)
+                                .addGap(37, 37, 37)
+                                .addComponent(btnEstoque)
+                                .addGap(43, 43, 43)
+                                .addComponent(btnAtualizar)
+                                .addGap(32, 32, 32)
+                                .addComponent(btnEntradaSaida)
+                                .addGap(130, 130, 130))
         );
         jPanel4Layout.setVerticalGroup(
-            jPanel4Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(jPanel4Layout.createSequentialGroup()
-                .addGap(19, 19, 19)
-                .addGroup(jPanel4Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(jLabel1, javax.swing.GroupLayout.PREFERRED_SIZE, 28, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addGroup(jPanel4Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                        .addComponent(btnHome)
-                        .addComponent(btnEstoque)
-                        .addComponent(btnAtualizar)
-                        .addComponent(btnEntradaSaida)))
-                .addContainerGap(14, Short.MAX_VALUE))
+                jPanel4Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                        .addGroup(jPanel4Layout.createSequentialGroup()
+                                .addGap(19, 19, 19)
+                                .addGroup(jPanel4Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                                        .addComponent(jLabel1, javax.swing.GroupLayout.PREFERRED_SIZE, 28, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                        .addGroup(jPanel4Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                                                .addComponent(btnHome)
+                                                .addComponent(btnEstoque)
+                                                .addComponent(btnAtualizar)
+                                                .addComponent(btnEntradaSaida)))
+                                .addContainerGap(14, Short.MAX_VALUE))
+        );
+
+        // Painel para os campos de entrada/saída
+        jPanel2.setBackground(new java.awt.Color(40, 34, 44)); // Cor de fundo similar aos outros JDialogs
+
+        jLabel2.setFont(new java.awt.Font("Liberation Sans", 1, 15)); // NOI18N
+        jLabel2.setForeground(new java.awt.Color(255, 255, 255));
+        jLabel2.setText("ID DO PRODUTO:");
+
+        txtProdutoId.setBackground(new java.awt.Color(22, 21, 27));
+        txtProdutoId.setForeground(new java.awt.Color(255, 255, 255));
+        txtProdutoId.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                txtProdutoIdActionPerformed(evt);
+            }
+        });
+
+        jLabel3.setFont(new java.awt.Font("Liberation Sans", 1, 15)); // NOI18N
+        jLabel3.setForeground(new java.awt.Color(255, 255, 255));
+        jLabel3.setText("QUANTIDADE:");
+
+        txtQuantidade.setBackground(new java.awt.Color(22, 21, 27));
+        txtQuantidade.setForeground(new java.awt.Color(255, 255, 255));
+        txtQuantidade.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                txtQuantidadeActionPerformed(evt);
+            }
+        });
+
+        jLabel4.setFont(new java.awt.Font("Liberation Sans", 1, 15)); // NOI18N
+        jLabel4.setForeground(new java.awt.Color(255, 255, 255));
+        jLabel4.setText("TIPO DE OPERAÇÃO:");
+
+        comBoxTipoOperacao.setBackground(new java.awt.Color(22, 21, 27));
+        comBoxTipoOperacao.setForeground(new java.awt.Color(255, 255, 255));
+        comBoxTipoOperacao.setModel(new javax.swing.DefaultComboBoxModel<>(new String[] { "ENTRADA", "SAIDA" }));
+
+        btnConfirmarOperacao.setBackground(new java.awt.Color(4, 138, 129));
+        btnConfirmarOperacao.setFont(new java.awt.Font("Liberation Sans", 1, 15)); // NOI18N
+        btnConfirmarOperacao.setForeground(new java.awt.Color(255, 255, 255));
+        btnConfirmarOperacao.setText("CONFIRMAR OPERAÇÃO");
+        btnConfirmarOperacao.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                btnConfirmarOperacaoActionPerformed(evt);
+            }
+        });
+
+        jLabel5.setFont(new java.awt.Font("Liberation Sans", 1, 15)); // NOI18N
+        jLabel5.setForeground(new java.awt.Color(255, 255, 255));
+        jLabel5.setText("PRODUTO:");
+
+        lblProdutoNome.setFont(new java.awt.Font("Liberation Sans", 0, 14)); // NOI18N
+        lblProdutoNome.setForeground(new java.awt.Color(200, 200, 200));
+        lblProdutoNome.setText("N/A"); // Valor inicial
+
+        btnBuscarProduto.setBackground(new java.awt.Color(202, 207, 214));
+        btnBuscarProduto.setForeground(new java.awt.Color(4, 138, 129));
+        btnBuscarProduto.setText("BUSCAR");
+        btnBuscarProduto.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                btnBuscarProdutoActionPerformed(evt);
+            }
+        });
+
+        jLabel7.setFont(new java.awt.Font("Liberation Sans", 1, 15)); // NOI18N
+        jLabel7.setForeground(new java.awt.Color(255, 255, 255));
+        jLabel7.setText("ESTOQUE ATUAL:");
+
+        lblEstoqueAtual.setFont(new java.awt.Font("Liberation Sans", 0, 14)); // NOI18N
+        lblEstoqueAtual.setForeground(new java.awt.Color(200, 200, 200));
+        lblEstoqueAtual.setText("N/A"); // Valor inicial
+
+        javax.swing.GroupLayout jPanel2Layout = new javax.swing.GroupLayout(jPanel2);
+        jPanel2.setLayout(jPanel2Layout);
+        jPanel2Layout.setHorizontalGroup(
+                jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                        .addGroup(jPanel2Layout.createSequentialGroup()
+                                .addGap(50, 50, 50)
+                                .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                                        .addComponent(btnConfirmarOperacao, javax.swing.GroupLayout.PREFERRED_SIZE, 250, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                        .addGroup(jPanel2Layout.createSequentialGroup()
+                                                .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                                                        .addComponent(jLabel2)
+                                                        .addGroup(jPanel2Layout.createSequentialGroup()
+                                                                .addComponent(txtProdutoId, javax.swing.GroupLayout.PREFERRED_SIZE, 150, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                                                                .addComponent(btnBuscarProduto))
+                                                        .addComponent(jLabel3)
+                                                        .addComponent(txtQuantidade, javax.swing.GroupLayout.PREFERRED_SIZE, 150, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                                        .addComponent(jLabel4)
+                                                        .addComponent(comBoxTipoOperacao, javax.swing.GroupLayout.PREFERRED_SIZE, 150, javax.swing.GroupLayout.PREFERRED_SIZE))
+                                                .addGap(50, 50, 50)
+                                                .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                                                        .addComponent(jLabel7)
+                                                        .addComponent(lblEstoqueAtual)
+                                                        .addComponent(lblProdutoNome)
+                                                        .addComponent(jLabel5))))
+                                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+        );
+        jPanel2Layout.setVerticalGroup(
+                jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                        .addGroup(jPanel2Layout.createSequentialGroup()
+                                .addGap(40, 40, 40)
+                                .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                                        .addComponent(jLabel2)
+                                        .addComponent(jLabel5))
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                                        .addComponent(txtProdutoId, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                        .addComponent(lblProdutoNome)
+                                        .addComponent(btnBuscarProduto))
+                                .addGap(18, 18, 18)
+                                .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                                        .addComponent(jLabel3)
+                                        .addComponent(jLabel7))
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                                        .addComponent(txtQuantidade, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                        .addComponent(lblEstoqueAtual))
+                                .addGap(18, 18, 18)
+                                .addComponent(jLabel4)
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                .addComponent(comBoxTipoOperacao, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                .addGap(30, 30, 30)
+                                .addComponent(btnConfirmarOperacao, javax.swing.GroupLayout.PREFERRED_SIZE, 40, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                .addContainerGap(280, Short.MAX_VALUE))
         );
 
         javax.swing.GroupLayout jPanel1Layout = new javax.swing.GroupLayout(jPanel1);
         jPanel1.setLayout(jPanel1Layout);
         jPanel1Layout.setHorizontalGroup(
-            jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(jPanel4, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                        .addComponent(jPanel4, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                        .addGroup(jPanel1Layout.createSequentialGroup()
+                                .addGap(300, 300, 300) // Centraliza o painel principal
+                                .addComponent(jPanel2, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
         );
         jPanel1Layout.setVerticalGroup(
-            jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(jPanel1Layout.createSequentialGroup()
-                .addComponent(jPanel4, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addGap(0, 640, Short.MAX_VALUE))
-        );
-
-        javax.swing.GroupLayout jPanel2Layout = new javax.swing.GroupLayout(jPanel2);
-        jPanel2.setLayout(jPanel2Layout);
-        jPanel2Layout.setHorizontalGroup(
-            jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGap(0, 100, Short.MAX_VALUE)
-        );
-        jPanel2Layout.setVerticalGroup(
-            jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGap(0, 100, Short.MAX_VALUE)
+                jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                        .addGroup(jPanel1Layout.createSequentialGroup()
+                                .addComponent(jPanel4, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                .addGap(50, 50, 50) // Espaço entre o header e o conteúdo principal
+                                .addComponent(jPanel2, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                .addGap(0, 50, Short.MAX_VALUE)) // Espaço inferior
         );
 
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
         layout.setHorizontalGroup(
-            layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(layout.createSequentialGroup()
-                .addGap(1192, 1192, 1192)
-                .addComponent(jPanel2, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
-            .addGroup(layout.createSequentialGroup()
-                .addComponent(jPanel1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addGap(0, 76, Short.MAX_VALUE))
+                layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                        .addGroup(layout.createSequentialGroup()
+                                .addComponent(jPanel1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                .addGap(0, 0, Short.MAX_VALUE)) // Removido jPanel2 pois está aninhado em jPanel1
         );
         layout.setVerticalGroup(
-            layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(layout.createSequentialGroup()
-                .addComponent(jPanel1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(jPanel2, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                        .addGroup(layout.createSequentialGroup()
+                                .addComponent(jPanel1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                .addGap(0, 0, Short.MAX_VALUE)) // Removido jPanel2 pois está aninhado em jPanel1
         );
 
         pack();
     }// </editor-fold>//GEN-END:initComponents
 
-    private void btnHomeActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnHomeActionPerformed
-        try {
-            for (javax.swing.UIManager.LookAndFeelInfo info : javax.swing.UIManager.getInstalledLookAndFeels()) {
-                if ("Nimbus".equals(info.getName())) {
-                    javax.swing.UIManager.setLookAndFeel(info.getClassName());
-                    break;
-                }
-            }
-        } catch (ReflectiveOperationException | javax.swing.UnsupportedLookAndFeelException ex) {
-            logger.log(java.util.logging.Level.SEVERE, null, ex);
-        }
-        //</editor-fold>
+    private void txtProdutoIdActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_txtProdutoIdActionPerformed
+        // TODO add your handling code here:
+    }//GEN-LAST:event_txtProdutoIdActionPerformed
 
-        /* Create and display the form */
+    private void txtQuantidadeActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_txtQuantidadeActionPerformed
+        // TODO add your handling code here:
+    }//GEN-LAST:event_txtQuantidadeActionPerformed
+
+    private void btnConfirmarOperacaoActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnConfirmarOperacaoActionPerformed
+        if (produtoImpl == null) {
+            JOptionPane.showMessageDialog(this, "O serviço de banco de dados não foi inicializado corretamente.", "Erro Interno", JOptionPane.ERROR_MESSAGE);
+            logger.log(Level.SEVERE, "produtoImpl é nulo no btnConfirmarOperacaoActionPerformed.");
+            return;
+        }
+
+        String produtoIdText = txtProdutoId.getText().trim();
+        String quantidadeText = txtQuantidade.getText().trim();
+        String tipoOperacao = (String) comBoxTipoOperacao.getSelectedItem();
+
+        // Validação de campos vazios
+        if (produtoIdText.isEmpty() || quantidadeText.isEmpty() || tipoOperacao == null) {
+            JOptionPane.showMessageDialog(this, "Por favor, preencha o ID do Produto, a Quantidade e selecione o Tipo de Operação.", "Campos Vazios", JOptionPane.WARNING_MESSAGE);
+            logger.log(Level.WARNING, "Tentativa de operação de estoque com campos vazios.");
+            return;
+        }
+
+        Long produtoId;
+        int quantidade;
+        try {
+            produtoId = Long.parseLong(produtoIdText);
+            quantidade = Integer.parseInt(quantidadeText);
+            if (quantidade <= 0) {
+                JOptionPane.showMessageDialog(this, "A quantidade deve ser um número positivo.", "Valor Inválido", JOptionPane.WARNING_MESSAGE);
+                return;
+            }
+        } catch (NumberFormatException e) {
+            JOptionPane.showMessageDialog(this, "ID do Produto e Quantidade devem ser números válidos.", "Erro de Formato", JOptionPane.ERROR_MESSAGE);
+            logger.log(Level.WARNING, "Erro de formato ao parsear ID do Produto ou Quantidade: " + e.getMessage(), e);
+            return;
+        }
+
+        try {
+            ProdutoDTO produto = produtoImpl.buscarPorId(produtoId);
+
+            if (produto == null) {
+                JOptionPane.showMessageDialog(this, "Produto com ID " + produtoId + " não encontrado.", "Produto Não Encontrado", JOptionPane.WARNING_MESSAGE);
+                logger.log(Level.WARNING, "Tentativa de operação de estoque em produto ID inexistente: " + produtoId);
+                return;
+            }
+
+            int estoqueAtual = produto.getQuantidadeEstoque();
+            int novoEstoque = estoqueAtual;
+
+            if ("ENTRADA".equals(tipoOperacao)) {
+                novoEstoque = estoqueAtual + quantidade;
+                logger.log(Level.INFO, "Entrada de estoque: Produto ID " + produtoId + ", Quantidade: " + quantidade + ". Novo estoque: " + novoEstoque);
+            } else if ("SAIDA".equals(tipoOperacao)) {
+                if (estoqueAtual < quantidade) {
+                    JOptionPane.showMessageDialog(this, "Estoque insuficiente para realizar a saída. Estoque atual: " + estoqueAtual + ", Saída solicitada: " + quantidade, "Estoque Insuficiente", JOptionPane.WARNING_MESSAGE);
+                    logger.log(Level.WARNING, "Saída de estoque não realizada: Estoque insuficiente para Produto ID " + produtoId + ". Necessário: " + quantidade + ", Disponível: " + estoqueAtual);
+                    return;
+                }
+                novoEstoque = estoqueAtual - quantidade;
+                logger.log(Level.INFO, "Saída de estoque: Produto ID " + produtoId + ", Quantidade: " + quantidade + ". Novo estoque: " + novoEstoque);
+            }
+
+            produto.setQuantidadeEstoque(novoEstoque);
+            produtoImpl.atualizar(produto); // Assume que ProdutoDAOImpl tem um método 'atualizar'
+
+            JOptionPane.showMessageDialog(this, "Operação de estoque realizada com sucesso! Novo estoque para " + produto.getDescricao() + ": " + novoEstoque, "Sucesso", JOptionPane.INFORMATION_MESSAGE);
+            limparCamposOperacao(); // Limpa os campos após a operação
+            // Atualiza o estoque atual na label após a operação bem-sucedida
+            lblEstoqueAtual.setText(String.valueOf(novoEstoque));
+        } catch (SQLException ex) {
+            logger.log(Level.SEVERE, "Erro SQL ao realizar operação de estoque: " + ex.getMessage(), ex);
+            JOptionPane.showMessageDialog(this, "Erro ao interagir com o banco de dados: " + ex.getMessage(), "Erro de Banco de Dados", JOptionPane.ERROR_MESSAGE);
+        } catch (Exception ex) {
+            logger.log(Level.SEVERE, "Ocorreu um erro inesperado ao processar a operação de estoque: " + ex.getMessage(), ex);
+            JOptionPane.showMessageDialog(this, "Ocorreu um erro inesperado: " + ex.getMessage(), "Erro Inesperado", JOptionPane.ERROR_MESSAGE);
+        }
+    }//GEN-LAST:event_btnConfirmarOperacaoActionPerformed
+
+    private void btnBuscarProdutoActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnBuscarProdutoActionPerformed
+        if (produtoImpl == null) {
+            JOptionPane.showMessageDialog(this, "O serviço de banco de dados não foi inicializado corretamente.", "Erro Interno", JOptionPane.ERROR_MESSAGE);
+            logger.log(Level.SEVERE, "produtoImpl é nulo no btnBuscarProdutoActionPerformed.");
+            return;
+        }
+
+        String produtoIdText = txtProdutoId.getText().trim();
+        if (produtoIdText.isEmpty()) {
+            JOptionPane.showMessageDialog(this, "Por favor, insira um ID de Produto para buscar.", "Campo Vazio", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+
+        try {
+            Long produtoId = Long.parseLong(produtoIdText);
+            ProdutoDTO produto = produtoImpl.buscarPorId(produtoId);
+
+            if (produto != null) {
+                lblProdutoNome.setText(produto.getDescricao() + " (" + produto.getModelo() + ")");
+                lblEstoqueAtual.setText(String.valueOf(produto.getQuantidadeEstoque()));
+                JOptionPane.showMessageDialog(this, "Produto encontrado!", "Sucesso", JOptionPane.INFORMATION_MESSAGE);
+            } else {
+                lblProdutoNome.setText("N/A");
+                lblEstoqueAtual.setText("N/A");
+                JOptionPane.showMessageDialog(this, "Produto com ID " + produtoId + " não encontrado.", "Produto Não Encontrado", JOptionPane.INFORMATION_MESSAGE);
+            }
+        } catch (NumberFormatException e) {
+            JOptionPane.showMessageDialog(this, "ID do Produto deve ser um número válido.", "Erro de Formato", JOptionPane.ERROR_MESSAGE);
+            logger.log(Level.WARNING, "Erro de formato ao parsear ID do Produto: " + e.getMessage(), e);
+        } catch (SQLException ex) {
+            logger.log(Level.SEVERE, "Erro SQL ao buscar produto: " + ex.getMessage(), ex);
+            JOptionPane.showMessageDialog(this, "Erro ao interagir com o banco de dados ao buscar produto: " + ex.getMessage(), "Erro de Banco de Dados", JOptionPane.ERROR_MESSAGE);
+        } catch (Exception ex) {
+            logger.log(Level.SEVERE, "Ocorreu um erro inesperado ao buscar o produto: " + ex.getMessage(), ex);
+            JOptionPane.showMessageDialog(this, "Ocorreu um erro inesperado ao buscar o produto: " + ex.getMessage(), "Erro Inesperado", JOptionPane.ERROR_MESSAGE);
+        }
+    }//GEN-LAST:event_btnBuscarProdutoActionPerformed
+
+    private void btnHomeActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnHomeActionPerformed
+        this.dispose(); // Fecha a janela atual
         java.awt.EventQueue.invokeLater(() -> new janelaPrincipalGUI().setVisible(true));
     }//GEN-LAST:event_btnHomeActionPerformed
 
     private void btnEstoqueActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnEstoqueActionPerformed
+        this.dispose(); // Fecha a janela atual
         java.awt.EventQueue.invokeLater(() -> new estoqueGUI().setVisible(true));
     }//GEN-LAST:event_btnEstoqueActionPerformed
 
     private void btnAtualizarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnAtualizarActionPerformed
+        this.dispose(); // Fecha a janela atual
         java.awt.EventQueue.invokeLater(() -> {
             try {
                 new atualizarGUI().setVisible(true);
             } catch (SQLException e) {
-                throw new RuntimeException(e);
+                logger.log(Level.SEVERE, "Erro ao abrir tela de atualização: " + e.getMessage(), e);
+                JOptionPane.showMessageDialog(this, "Erro ao abrir tela de atualização: " + e.getMessage(), "Erro", JOptionPane.ERROR_MESSAGE);
             }
         });
     }//GEN-LAST:event_btnAtualizarActionPerformed
 
     private void btnEntradaSaidaActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnEntradaSaidaActionPerformed
-        java.awt.EventQueue.invokeLater(() -> new entradaSaidaGUI().setVisible(true));
+        // Já está na tela de entrada/saída, não precisa fazer nada além de um log informativo.
+        logger.log(Level.INFO, "Já está na tela de Entrada/Saída.");
+    }
+
+    private void limparCamposOperacao() {
+        txtProdutoId.setText("");
+        txtQuantidade.setText("");
+        lblProdutoNome.setText("N/A");
+        lblEstoqueAtual.setText("N/A");
+        comBoxTipoOperacao.setSelectedIndex(0);
     }
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton btnAtualizar;
+    private javax.swing.JButton btnBuscarProduto;
+    private javax.swing.JButton btnConfirmarOperacao;
     private javax.swing.JButton btnEntradaSaida;
     private javax.swing.JButton btnEstoque;
     private javax.swing.JButton btnHome;
+    private javax.swing.JComboBox<String> comBoxTipoOperacao;
     private javax.swing.JLabel jLabel1;
+    private javax.swing.JLabel jLabel2;
+    private javax.swing.JLabel jLabel3;
+    private javax.swing.JLabel jLabel4;
+    private javax.swing.JLabel jLabel5;
+    private javax.swing.JLabel jLabel7;
     private javax.swing.JPanel jPanel1;
     private javax.swing.JPanel jPanel2;
     private javax.swing.JPanel jPanel4;
+    private javax.swing.JLabel lblEstoqueAtual;
+    private javax.swing.JLabel lblProdutoNome;
+    private javax.swing.JTextField txtProdutoId;
+    private javax.swing.JTextField txtQuantidade;
     // End of variables declaration//GEN-END:variables
 }

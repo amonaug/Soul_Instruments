@@ -7,6 +7,8 @@ public class InstrumentoDTO {
     private String nome;
     private Categoria categoria;
 
+    public InstrumentoDTO() {}
+
     public InstrumentoDTO(String nome, Categoria categoria) {
         this.nome = nome;
         this.categoria = categoria;
@@ -23,7 +25,7 @@ public class InstrumentoDTO {
         return idInstrumento;
     }
 
-    public void setIdInstrumento(Long id) {
+    public void setIdInstrumento(Long idInstrumento) { // Corrigido: o parâmetro deve ser usado para atribuir ao campo
         this.idInstrumento = idInstrumento;
     }
 
@@ -41,5 +43,10 @@ public class InstrumentoDTO {
 
     public void setCategoria(Categoria categoria) {
         this.categoria = categoria;
+    }
+
+    @Override
+    public String toString() {
+        return nome; // Facilita a exibição em componentes de UI e logs
     }
 }

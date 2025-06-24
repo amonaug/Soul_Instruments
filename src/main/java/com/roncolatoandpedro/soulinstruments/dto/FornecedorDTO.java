@@ -6,9 +6,9 @@ public class FornecedorDTO {
     private String nomeFornecedor;
     private String cnpj;
     private String descricao;
-    
+
     public FornecedorDTO() {}
-    
+
     public FornecedorDTO(Long id, String nomeFornecedor, String cnpj, String descricao) {
         this.id = id;
         this.nomeFornecedor = nomeFornecedor;

@@ -2,7 +2,6 @@ package com.roncolatoandpedro.soulinstruments.dao.impl;
 
 import com.roncolatoandpedro.soulinstruments.dao.interfaces.ProdutoDAO;
 import com.roncolatoandpedro.soulinstruments.dto.ProdutoDTO;
-import com.roncolatoandpedro.soulinstruments.dto.Categoria;
 
 import java.sql.*;
 import java.util.List;
@@ -106,18 +105,21 @@ public class ProdutoDAOImpl implements ProdutoDAO {
     }
 
     @Override
-    public Optional<ProdutoDTO> buscarPorId(Long idProduto) throws SQLException{
+    public ProdutoDTO buscarPorId(Long idProduto) throws SQLException{
         String sql = "SELECT * FROM Produto WHERE idProduto = ?";
         try (PreparedStatement stmt = conexao.prepareStatement(sql)){
             stmt.setLong(1, idProduto);
             try (ResultSet rs = stmt.executeQuery()){
                 if (rs.next()){
-                    return Optional.of(mapearResultSetParaProdutoDTO(rs));
+                    return mapearResultSetParaProdutoDTO(rs);
+                }
+                else{
+                    return null;
                 }
             }
         }
-        return Optional.empty();
     }
+
 
     @Override
     public List<ProdutoDTO> listarTodos() throws SQLException {

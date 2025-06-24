@@ -11,11 +11,12 @@ import java.util.Optional;
 
 public class InstrumentoDAOImpl implements InstrumentoDAO {
 
-    private final Connection conexao;
+    private Connection conexao;
 
     public InstrumentoDAOImpl(Connection conexao) {
         this.conexao = conexao;
     }
+    public InstrumentoDAOImpl() {}
 
     private InstrumentoDTO mapearResultSet(ResultSet rs) throws SQLException {
         Long idInstrumento = rs.getLong("idInstrumento");
@@ -64,15 +65,15 @@ public class InstrumentoDAOImpl implements InstrumentoDAO {
 
 
     @Override
-    public Optional<InstrumentoDTO> buscarPorId(Long instrumentoId) throws SQLException {
+    public InstrumentoDTO buscarPorId(Long instrumentoId) throws SQLException {
         String sql = "SELECT * FROM Instrumento WHERE idInstrumento = ?";
         try (PreparedStatement stmt = conexao.prepareStatement(sql)) {
             stmt.setLong(1, instrumentoId);
             try (ResultSet rs = stmt.executeQuery()) {
                 if (rs.next()) {
-                    return Optional.of(mapearResultSet(rs));
+                    return mapearResultSet(rs);
                 } else {
-                    return Optional.empty();
+                    return null;
                 }
             }
         }
@@ -89,5 +90,22 @@ public class InstrumentoDAOImpl implements InstrumentoDAO {
             }
         }
         return instrumentos;
+    }
+
+    public Optional<InstrumentoDTO> buscarPorNome(String nome) throws SQLException {
+        String sql = "SELECT * FROM Fornecedor WHERE nomeFornecedor = ?";
+        try (PreparedStatement stmt = conexao.prepareStatement(sql)) {
+            stmt.setString(1, nome);
+            try (ResultSet rs = stmt.executeQuery()) {
+                if (rs.next()) {
+                    InstrumentoDTO instrumento = new InstrumentoDTO();
+                    instrumento.setIdInstrumento(rs.getLong("idInstrumento"));
+                    instrumento.setNome(rs.getString("nome"));
+                    instrumento.setCategoria(Categoria.valueOf(rs.getString("categoria")));
+                    return Optional.of(instrumento);
+                }
+            }
+        }
+        return null;
     }
 }

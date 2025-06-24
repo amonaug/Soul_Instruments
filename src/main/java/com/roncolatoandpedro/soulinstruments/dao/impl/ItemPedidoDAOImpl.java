@@ -20,7 +20,7 @@ public class ItemPedidoDAOImpl implements ItemPedidoDAO {
 
     @Override
     public ItemPedidoDTO salvar(ItemPedidoDTO itemPedido, Long idPedido, ProdutoDAO produtoDAO) throws SQLException {
-        Optional<ProdutoDTO> produtoOpt = produtoDAO.buscarPorId(itemPedido.getIdProduto());
+        Optional<ProdutoDTO> produtoOpt = Optional.ofNullable(produtoDAO.buscarPorId(itemPedido.getIdProduto()));
         if (produtoOpt.isEmpty()) {
             throw new SQLException("Produto com ID " + itemPedido.getIdProduto() + " não encontrado para o item do pedido.");
         }

@@ -37,6 +37,18 @@ public class PedidoDAOImpl implements PedidoDAO {
         this.itemPedidoDAO = itemPedidoDAO;
     }
 
+    // Os construtores redundantes foram removidos para manter apenas o construtor principal
+    // que recebe todas as dependências.
+    // public PedidoDAOImpl(Connection conexao, Connection conexao1) {
+    //     this.conexao = conexao1;
+    // }
+    // public PedidoDAOImpl(Connection conexao, ProdutoDAO produtoDAO, ItemPedidoDAO itemPedidoDAO, Connection conexao1) {
+    //     this.conexao = conexao1;
+    // }
+    // public PedidoDAOImpl(Connection conexao) {
+    //     this.conexao = conexao;
+    // }
+
     @Override
     public PedidoDTO salvar(PedidoDTO pedido) throws SQLException {
         // SQL ajustado para incluir nomeCliente e status, e removido dataEntrega se não for usada.
@@ -91,11 +103,10 @@ public class PedidoDAOImpl implements PedidoDAO {
             // Salvar os Itens do Pedido usando ItemPedidoDAO
             if (pedido.getItens() != null && !pedido.getItens().isEmpty()) {
                 for (ItemPedidoDTO item : pedido.getItens()) {
-                    // O item já deve ter o valor unitário e total calculados.
-                    // O ItemPedidoDAO.salvar ainda precisa do produtoDAO se ele recalcular o preço,
-                    // mas o ideal é que ele apenas persista o DTO que já vem pronto.
-                    // Mantive como estava na sua interface ItemPedidoDAO.
-                    itemPedidoDAO.salvar(item, pedido.getIdPedido(), (ProdutoDAOImpl) produtoDAO); // Cast necessário se ItemPedidoDAO.salvar espera ProdutoDAOImpl
+                    // ATENÇÃO: O ItemPedidoDAO.salvar atualmente espera ProdutoDAOImpl.
+                    // O ideal é que a interface ItemPedidoDAO seja atualizada para esperar ProdutoDAO (interface)
+                    // para manter a consistência e a boa prática de programar para interfaces.
+                    itemPedidoDAO.salvar(item, pedido.getIdPedido(), (ProdutoDAOImpl) produtoDAO);
                     logger.log(Level.INFO, "Item de pedido salvo para Pedido ID: " + pedido.getIdPedido() + ", Produto ID: " + item.getIdProduto());
                 }
             }
@@ -119,13 +130,10 @@ public class PedidoDAOImpl implements PedidoDAO {
         // Se houver necessidade de atualizar outros campos, o SQL e os setters devem ser ajustados.
         String sql = "UPDATE Pedido SET status = ? WHERE idPedido = ?";
         try (PreparedStatement stmt = conexao.prepareStatement(sql)) {
-            stmt.setString(1, pedido.getStatus());
             stmt.setLong(2, pedido.getIdPedido());
             int affectedRows = stmt.executeUpdate();
             if (affectedRows == 0) {
                 logger.log(Level.WARNING, "Nenhum pedido encontrado com ID " + pedido.getIdPedido() + " para atualizar o status.");
-            } else {
-                logger.log(Level.INFO, "Status do pedido ID " + pedido.getIdPedido() + " atualizado para: " + pedido.getStatus());
             }
         } catch (SQLException e) {
             logger.log(Level.SEVERE, "Erro ao atualizar status do pedido ID " + pedido.getIdPedido() + ". Erro: " + e.getMessage(), e);
@@ -175,11 +183,7 @@ public class PedidoDAOImpl implements PedidoDAO {
 
     private PedidoDTO mapearResultSetParaPedidoDTO(ResultSet rs) throws SQLException {
         PedidoDTO pedido = new PedidoDTO();
-        pedido.setIdPedido(rs.getLong("idPedido"));
-        pedido.setNomeCliente(rs.getString("nomeCliente")); // Mapeia o nome do cliente
-        pedido.setDataPedido(rs.getDate("dataPedido")); // Mapeia a data do pedido (java.util.Date)
-        pedido.setValorTotal(rs.getDouble("valorTotal"));
-        pedido.setStatus(rs.getString("status"));       // Mapeia o status
+        pedido.setIdPedido(rs.getLong("idPedido"));// Mapeia o nome do client
         pedido.setIdFornecedor(rs.getLong("idFornecedor"));
         // idProduto e quantidade não são mapeados aqui, pois são de ItemPedidoDTO
         // Eles foram inferidos para o PedidoDTO para a UI cadastrarPedidoGUI.java,
@@ -208,7 +212,7 @@ public class PedidoDAOImpl implements PedidoDAO {
             // Carregar os itens do pedido usando ItemPedidoDAO
             List<ItemPedidoDTO> itens = itemPedidoDAO.buscarPorPedidoId(idPedido);
             pedido.setItens(itens); // Isso também recalculará o valorTotal do pedido no DTO
-            logger.log(Level.INFO, "Pedido ID " + idPedido + " encontrado e itens carregados.");
+            logger.log(Level.INFO, "Pedido ID " + pedido.getIdPedido() + " encontrado e itens carregados.");
             return Optional.of(pedido);
         }
         logger.log(Level.INFO, "Pedido com ID " + idPedido + " não encontrado.");

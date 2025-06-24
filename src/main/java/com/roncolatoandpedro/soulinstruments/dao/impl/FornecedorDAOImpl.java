@@ -11,11 +11,12 @@ import java.util.ArrayList;
 
 
 public class FornecedorDAOImpl implements FornecedorDAO {
-    private final Connection conexao;
+    private Connection conexao;
 
     public FornecedorDAOImpl(Connection conexao) {
         this.conexao = conexao;
     }
+    public FornecedorDAOImpl() {}
 
     @Override
     public FornecedorDTO salvar(FornecedorDTO fornecedor) throws SQLException {
@@ -78,17 +79,19 @@ public class FornecedorDAOImpl implements FornecedorDAO {
     }
 
     @Override
-    public Optional<FornecedorDTO> buscarPorId(Long id) throws SQLException {
+    public FornecedorDTO buscarPorId(Long id) throws SQLException {
         String sql = "SELECT * FROM fornecedor WHERE id = ?";
         try (PreparedStatement stmt = conexao.prepareStatement(sql)) {
             stmt.setLong(1, id);
             try (ResultSet rs = stmt.executeQuery()) {
                 if (rs.next()) {
-                    return Optional.of(mapearResultSetParaFornecedorDTO(rs));
+                    return mapearResultSetParaFornecedorDTO(rs);
+                }
+                else {
+                    return null;
                 }
             }
         }
-        return Optional.empty();
     }
 
 
@@ -143,7 +146,22 @@ public class FornecedorDAOImpl implements FornecedorDAO {
         return lista;
     }
 
-
-
+    public FornecedorDTO buscarPorNome(String nome) throws SQLException {
+        String sql = "SELECT * FROM Fornecedor WHERE nomeFornecedor = ?";
+        try (PreparedStatement stmt = conexao.prepareStatement(sql)) {
+            stmt.setString(1, nome);
+            try (ResultSet rs = stmt.executeQuery()) {
+                if (rs.next()) {
+                    FornecedorDTO fornecedor = new FornecedorDTO();
+                    fornecedor.setId(rs.getLong("idFornecedor"));
+                    fornecedor.setNomeFornecedor(rs.getString("nome_fantasia"));
+                    fornecedor.setCnpj(rs.getString("cnpj"));
+                    fornecedor.setDescricao(rs.getString("descricao"));
+                    return fornecedor;
+                }
+            }
+        }
+        return null;
+    }
 
 }
