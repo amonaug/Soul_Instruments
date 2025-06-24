@@ -5,15 +5,14 @@
 package com.roncolatoandpedro.soulinstruments.ui;
 
 import com.roncolatoandpedro.soulinstruments.dao.DAOFactory; // Importe DAOFactory
-import com.roncolatoandpedro.soulinstruments.dao.impl.InstrumentoDAOImpl;
+import com.roncolatoandpedro.soulinstruments.dao.interfaces.InstrumentoDAO; // Importado a interface, não a implementação direta
 import com.roncolatoandpedro.soulinstruments.dto.Categoria;
 import com.roncolatoandpedro.soulinstruments.dto.InstrumentoDTO;
 
 import javax.swing.*;
-import java.sql.Connection; // Importe Connection
-import java.sql.SQLException;
-import java.util.logging.Level; // Importe Level para uso com logger
-import java.util.logging.Logger; // Importe Logger
+import java.sql.SQLException; // Importe SQLException
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  *
@@ -23,8 +22,8 @@ public class cadastrarInstrumento extends javax.swing.JDialog {
 
     private static final Logger logger = Logger.getLogger(cadastrarInstrumento.class.getName());
 
-    // A instância da DAO para instrumentos
-    private InstrumentoDAOImpl instrumentoImpl;
+    // A instância da DAO para instrumentos, usando a interface para melhor prática
+    private InstrumentoDAO instrumentoImpl; // Alterado de InstrumentoDAOImpl para InstrumentoDAO
 
     /**
      * Creates new form NewJDialog
@@ -36,20 +35,19 @@ public class cadastrarInstrumento extends javax.swing.JDialog {
         initComponents();
 
         try {
-            // Inicializa a DAO de Instrumento usando a fábrica de conexões.
-            // É fundamental que DAOFactory.getConexao() retorne uma Connection válida.
-            Connection connection = DAOFactory.getConexao();
-            this.instrumentoImpl = new InstrumentoDAOImpl(connection);
+            // Inicializa a DAO de Instrumento usando o método factory da DAOFactory
+            // Corrigido para usar DAOFactory.criarInstrumentoDAO()
+            this.instrumentoImpl = DAOFactory.criarInstrumentoDAO();
         } catch (SQLException e) {
             // Se houver um erro ao obter a conexão ou inicializar a DAO,
             // registre o erro e informe o usuário.
-            logger.log(Level.SEVERE, "Erro ao inicializar InstrumentoDAOImpl: " + e.getMessage(), e);
+            logger.log(Level.SEVERE, "Erro ao inicializar InstrumentoDAO: " + e.getMessage(), e);
             JOptionPane.showMessageDialog(this,
                     "Erro ao conectar ao banco de dados para o cadastro de instrumento: " + e.getMessage(),
                     "Erro de Inicialização",
                     JOptionPane.ERROR_MESSAGE);
-            // Opcional: Se a conexão for crítica, você pode querer fechar o diálogo.
-            // dispose();
+            // É crítico: se não conseguiu inicializar a DAO, pode não ser possível prosseguir.
+            // Opcional: dispose(); // Para fechar o diálogo automaticamente em caso de erro crítico
         }
 
         // Popula o JComboBox com os valores da enum Categoria
@@ -113,8 +111,8 @@ public class cadastrarInstrumento extends javax.swing.JDialog {
             }
         });
 
-        btnSalvar.setBackground(new java.awt.Color(202, 207, 214));
-        btnSalvar.setForeground(new java.awt.Color(4, 138, 129));
+        btnSalvar.setBackground(new java.awt.Color(4, 138, 129)); // Cor de fundo teal
+        btnSalvar.setForeground(new java.awt.Color(255, 255, 255)); // Cor da fonte branca
         btnSalvar.setText("SALVAR");
         btnSalvar.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
@@ -192,7 +190,7 @@ public class cadastrarInstrumento extends javax.swing.JDialog {
             return;
         }
 
-        String nome = txtNome.getText();
+        String nome = txtNome.getText().trim(); // Adicionado trim()
         String categoriaSelecionada = (String) comBoxCategoria.getSelectedItem();
 
         // Validação de campos vazios
@@ -217,7 +215,6 @@ public class cadastrarInstrumento extends javax.swing.JDialog {
             logger.log(Level.SEVERE, "Erro ao converter categoria: " + categoriaSelecionada, e);
             return;
         }
-
 
         // Salvar no banco
         try {
@@ -267,6 +264,7 @@ public class cadastrarInstrumento extends javax.swing.JDialog {
         /* Create and display the dialog */
         java.awt.EventQueue.invokeLater(new Runnable() {
             public void run() {
+                // Adicionado try-catch para lidar com SQLException do construtor
                 cadastrarInstrumento dialog = new cadastrarInstrumento(new JFrame(), true);
                 dialog.addWindowListener(new java.awt.event.WindowAdapter() {
                     @Override

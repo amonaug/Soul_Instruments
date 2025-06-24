@@ -38,6 +38,8 @@ public interface ItemPedidoDAO {
     // Alterei ProdutoDAO para ProdutoDAOImpl para corresponder ao seu uso em outros lugares,
     // mas o ideal em interfaces é usar a interface (e.g., ProdutoDAO se ela existir)
 
+    ItemPedidoDTO salvar(ItemPedidoDTO itemPedido, Long idPedido, ProdutoDAO produtoDAO) throws SQLException;
+
     /**
      * Busca todos os itens de pedido associados a um determinado ID de Pedido.
      *

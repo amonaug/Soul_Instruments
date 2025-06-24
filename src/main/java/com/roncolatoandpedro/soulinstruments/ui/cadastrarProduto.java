@@ -4,25 +4,24 @@
  */
 package com.roncolatoandpedro.soulinstruments.ui;
 
-import com.roncolatoandpedro.soulinstruments.dao.DAOFactory; // Importe DAOFactory
-import com.roncolatoandpedro.soulinstruments.dao.impl.FornecedorDAOImpl;
-import com.roncolatoandpedro.soulinstruments.dao.impl.InstrumentoDAOImpl;
-import com.roncolatoandpedro.soulinstruments.dao.impl.ProdutoDAOImpl;
+import com.roncolatoandpedro.soulinstruments.dao.DAOFactory;
+import com.roncolatoandpedro.soulinstruments.dao.interfaces.FornecedorDAO; // Importe a interface FornecedorDAO
+import com.roncolatoandpedro.soulinstruments.dao.interfaces.InstrumentoDAO; // Importe a interface InstrumentoDAO
+import com.roncolatoandpedro.soulinstruments.dao.interfaces.ProdutoDAO; // Importe a interface ProdutoDAO
 import com.roncolatoandpedro.soulinstruments.dto.Categoria;
 import com.roncolatoandpedro.soulinstruments.dto.FornecedorDTO;
 import com.roncolatoandpedro.soulinstruments.dto.InstrumentoDTO;
 import com.roncolatoandpedro.soulinstruments.dto.ProdutoDTO;
 
 import javax.swing.*;
+import javax.swing.event.DocumentEvent; // Necessário para DocumentListener
+import javax.swing.event.DocumentListener; // Necessário para DocumentListener
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.sql.Connection; // Importe Connection
 import java.sql.SQLException;
-import java.util.logging.Level; // Importe Level para uso com logger
-import java.util.logging.Logger; // Importe Logger
-
-import static java.lang.Long.SIZE;
+import java.util.List;
+import java.util.Optional; // Importe Optional
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  *
@@ -32,10 +31,14 @@ public class cadastrarProduto extends javax.swing.JDialog {
 
     private static final Logger logger = Logger.getLogger(cadastrarProduto.class.getName());
 
-    // Instâncias das DAOs
-    private ProdutoDAOImpl produtoImpl;
-    private InstrumentoDAOImpl instrumentoImpl;
-    private FornecedorDAOImpl fornecedorImpl;
+    // Instâncias das DAOs, usando as interfaces
+    private ProdutoDAO produtoImpl;
+    private InstrumentoDAO instrumentoImpl;
+    private FornecedorDAO fornecedorImpl;
+
+    // Para o autocomplete de fornecedores
+    private JList<FornecedorDTO> listaFornecedores;
+    private JPopupMenu popupMenuFornecedores;
 
     /**
      * Creates new form cadastrarProduto
@@ -47,19 +50,19 @@ public class cadastrarProduto extends javax.swing.JDialog {
         initComponents();
 
         try {
-            // Inicializa as DAOs usando a fábrica de conexões
-            Connection connection = DAOFactory.getConexao();
-            this.produtoImpl = new ProdutoDAOImpl(connection);
-            this.instrumentoImpl = new InstrumentoDAOImpl(connection);
-            this.fornecedorImpl = new FornecedorDAOImpl(connection);
+            // Inicializa as DAOs usando os métodos factory da DAOFactory
+            this.produtoImpl = DAOFactory.criarProdutoDAO();
+            this.instrumentoImpl = DAOFactory.criarInstrumentoDAO();
+            this.fornecedorImpl = DAOFactory.criarFornecedorDAO(); // Usa o método criarFornecedorDAO
         } catch (SQLException e) {
             logger.log(Level.SEVERE, "Erro ao inicializar DAOs para cadastro de produto: " + e.getMessage(), e);
             JOptionPane.showMessageDialog(this,
                     "Erro ao conectar ao banco de dados para o cadastro de produto: " + e.getMessage(),
                     "Erro de Inicialização",
                     JOptionPane.ERROR_MESSAGE);
-            // Se a conexão for crítica, você pode querer fechar o diálogo.
-            // dispose();
+            // Se a conexão for crítica, é melhor fechar o diálogo.
+            dispose();
+            return; // Garante que não prossegue com DAOs nulas
         }
 
         // Popula o JComboBox com os valores da enum Categoria
@@ -68,6 +71,76 @@ public class cadastrarProduto extends javax.swing.JDialog {
             comBoxCategoria.addItem(categoria.name());
         }
         comBoxCategoria.setSelectedIndex(0); // Seleciona o primeiro item por padrão
+
+        configurarAutoCompleteFornecedor();
+    }
+
+    private void configurarAutoCompleteFornecedor() {
+        listaFornecedores = new JList<>();
+        listaFornecedores.setBackground(new Color(22, 21, 27));
+        listaFornecedores.setForeground(Color.WHITE);
+        listaFornecedores.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+
+        popupMenuFornecedores = new JPopupMenu();
+        JScrollPane scrollPane = new JScrollPane(listaFornecedores);
+        scrollPane.setPreferredSize(new Dimension(215, 150));
+        popupMenuFornecedores.add(scrollPane);
+
+        txtFornecedor.getDocument().addDocumentListener(new DocumentListener() {
+            @Override
+            public void insertUpdate(DocumentEvent e) { mostrarSugestoesFornecedor(); }
+            @Override
+            public void removeUpdate(DocumentEvent e) { mostrarSugestoesFornecedor(); }
+            @Override
+            public void changedUpdate(DocumentEvent e) { mostrarSugestoesFornecedor(); }
+        });
+
+        listaFornecedores.addListSelectionListener(e -> {
+            if (!e.getValueIsAdjusting()) {
+                FornecedorDTO selecionado = listaFornecedores.getSelectedValue();
+                if (selecionado != null) {
+                    txtFornecedor.setText(selecionado.getNomeFornecedor());
+                    popupMenuFornecedores.setVisible(false);
+                }
+            }
+        });
+    }
+
+    private void mostrarSugestoesFornecedor() {
+        SwingUtilities.invokeLater(() -> {
+            String texto = txtFornecedor.getText().trim();
+
+            if (texto.isEmpty()) {
+                popupMenuFornecedores.setVisible(false);
+                return;
+            }
+
+            try {
+                List<FornecedorDTO> fornecedores = fornecedorImpl.buscarFornecedoresPorNome(texto);
+                DefaultListModel<FornecedorDTO> modelo = new DefaultListModel<>();
+                for (FornecedorDTO fornecedor : fornecedores) {
+                    modelo.addElement(fornecedor);
+                }
+                listaFornecedores.setModel(modelo);
+
+                if (modelo.isEmpty()) {
+                    popupMenuFornecedores.setVisible(false);
+                    return;
+                }
+
+                int altura = Math.min(modelo.getSize() * 25, 150);
+                listaFornecedores.setPreferredSize(new Dimension(txtFornecedor.getWidth(), altura));
+
+                if (!popupMenuFornecedores.isVisible()) {
+                    popupMenuFornecedores.show(txtFornecedor, 0, txtFornecedor.getHeight());
+                }
+
+            } catch (SQLException e) {
+                logger.log(Level.SEVERE, "Erro ao buscar fornecedores para autocomplete: " + e.getMessage(), e);
+                popupMenuFornecedores.setVisible(false);
+                // Não mostra JOptionPane aqui para evitar spam de popups em cada digitação
+            }
+        });
     }
 
     /**
@@ -79,227 +152,231 @@ public class cadastrarProduto extends javax.swing.JDialog {
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
     private void initComponents() {
 
-        jPanel1 = new JPanel();
-        jLabel5 = new JLabel();
-        txtNome = new JTextField();
-        jLabel6 = new JLabel();
-        txtMarca = new JTextField();
-        jLabel4 = new JLabel();
-        comBoxCategoria = new JComboBox<>();
-        jLabel11 = new JLabel();
-        txtFornecedor = new JTextField();
-        jLabel10 = new JLabel();
-        txtPreco = new JTextField();
-        jLabel12 = new JLabel();
-        txtDescricao = new JTextField();
-        jLabel9 = new JLabel();
-        txtModelo1 = new JTextField();
-        jLabel13 = new JLabel();
-        txtQuantidade = new JTextField();
-        btnSalvar = new JButton();
+        jPanel1 = new javax.swing.JPanel();
+        jLabel5 = new javax.swing.JLabel();
+        txtNome = new javax.swing.JTextField();
+        jLabel6 = new javax.swing.JLabel();
+        txtMarca = new javax.swing.JTextField();
+        jLabel4 = new javax.swing.JLabel();
+        comBoxCategoria = new javax.swing.JComboBox<>();
+        jLabel11 = new javax.swing.JLabel();
+        txtFornecedor = new javax.swing.JTextField();
+        jLabel10 = new javax.swing.JLabel();
+        txtPreco = new javax.swing.JTextField();
+        jLabel12 = new javax.swing.JLabel();
+        txtDescricao = new javax.swing.JTextField();
+        jLabel9 = new javax.swing.JLabel();
+        txtModelo1 = new javax.swing.JTextField();
+        jLabel13 = new javax.swing.JLabel();
+        txtQuantidade = new javax.swing.JTextField();
+        btnSalvar = new javax.swing.JButton();
 
-        setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
+        setDefaultCloseOperation(javax.swing.WindowConstants.DISPOSE_ON_CLOSE);
 
-        jPanel1.setBackground(new Color(40, 34, 44));
+        jPanel1.setBackground(new java.awt.Color(40, 34, 44));
 
-        jLabel5.setBackground(new Color(21, 22, 27));
-        jLabel5.setFont(new Font("Liberation Sans", 1, 15)); // NOI18N
-        jLabel5.setForeground(new Color(255, 255, 255));
+        jLabel5.setBackground(new java.awt.Color(21, 22, 27));
+        jLabel5.setFont(new java.awt.Font("Liberation Sans", 1, 15)); // NOI18N
+        jLabel5.setForeground(new java.awt.Color(255, 255, 255));
         jLabel5.setText("NOME INSTRUMENTO"); // Alterado de ID para NOME INSTRUMENTO
 
-        txtNome.setBackground(new Color(22, 21, 27));
-        txtNome.setForeground(new Color(255, 255, 255));
-        txtNome.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent evt) {
+        txtNome.setBackground(new java.awt.Color(22, 21, 27));
+        txtNome.setForeground(new java.awt.Color(255, 255, 255));
+        txtNome.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
                 txtNomeActionPerformed(evt);
             }
         });
 
-        jLabel6.setBackground(new Color(21, 22, 27));
-        jLabel6.setFont(new Font("Liberation Sans", 1, 15)); // NOI18N
-        jLabel6.setForeground(new Color(255, 255, 255));
+        jLabel6.setBackground(new java.awt.Color(21, 22, 27));
+        jLabel6.setFont(new java.awt.Font("Liberation Sans", 1, 15)); // NOI18N
+        jLabel6.setForeground(new java.awt.Color(255, 255, 255));
         jLabel6.setText("MARCA");
 
-        txtMarca.setBackground(new Color(22, 21, 27));
-        txtMarca.setForeground(new Color(255, 255, 255));
-        txtMarca.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent evt) {
+        txtMarca.setBackground(new java.awt.Color(22, 21, 27));
+        txtMarca.setForeground(new java.awt.Color(255, 255, 255));
+        txtMarca.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
                 txtMarcaActionPerformed(evt);
             }
         });
 
-        jLabel4.setBackground(new Color(21, 22, 27));
-        jLabel4.setFont(new Font("Liberation Sans", 1, 15)); // NOI18N
-        jLabel4.setForeground(new Color(255, 255, 255));
+        jLabel4.setBackground(new java.awt.Color(21, 22, 27));
+        jLabel4.setFont(new java.awt.Font("Liberation Sans", 1, 15)); // NOI18N
+        jLabel4.setForeground(new java.awt.Color(255, 255, 255));
         jLabel4.setText("CATEGORIA");
 
-        comBoxCategoria.setBackground(new Color(21, 22, 27));
-        comBoxCategoria.setForeground(new Color(255, 255, 255));
-        comBoxCategoria.setModel(new DefaultComboBoxModel<>(new String[] { "SOPRO", "CORDAS", "PERCUSSAO", "ELETRONICO" }));
-        comBoxCategoria.addActionListener(this::comBoxCategoriaActionPerformed);
+        comBoxCategoria.setBackground(new java.awt.Color(21, 22, 27));
+        comBoxCategoria.setForeground(new java.awt.Color(255, 255, 255));
+        comBoxCategoria.setModel(new javax.swing.DefaultComboBoxModel<>(new String[] { "SOPRO", "CORDAS", "PERCUSSAO", "ELETRONICO" }));
+        comBoxCategoria.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                comBoxCategoriaActionPerformed(evt);
+            }
+        });
 
-        jLabel11.setBackground(new Color(21, 22, 27));
-        jLabel11.setFont(new Font("Liberation Sans", 1, 15)); // NOI18N
-        jLabel11.setForeground(new Color(255, 255, 255));
+        jLabel11.setBackground(new java.awt.Color(21, 22, 27));
+        jLabel11.setFont(new java.awt.Font("Liberation Sans", 1, 15)); // NOI18N
+        jLabel11.setForeground(new java.awt.Color(255, 255, 255));
         jLabel11.setText("FORNECEDOR");
 
-        txtFornecedor.setBackground(new Color(22, 21, 27));
-        txtFornecedor.setForeground(new Color(255, 255, 255));
-        txtFornecedor.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent evt) {
+        txtFornecedor.setBackground(new java.awt.Color(22, 21, 27));
+        txtFornecedor.setForeground(new java.awt.Color(255, 255, 255));
+        txtFornecedor.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
                 txtFornecedorActionPerformed(evt);
             }
         });
 
-        jLabel10.setBackground(new Color(21, 22, 27));
-        jLabel10.setFont(new Font("Liberation Sans", 1, 15)); // NOI18N
-        jLabel10.setForeground(new Color(255, 255, 255));
+        jLabel10.setBackground(new java.awt.Color(21, 22, 27));
+        jLabel10.setFont(new java.awt.Font("Liberation Sans", 1, 15)); // NOI18N
+        jLabel10.setForeground(new java.awt.Color(255, 255, 255));
         jLabel10.setText("PRECO");
 
-        txtPreco.setBackground(new Color(22, 21, 27));
-        txtPreco.setForeground(new Color(255, 255, 255));
-        txtPreco.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent evt) {
+        txtPreco.setBackground(new java.awt.Color(22, 21, 27));
+        txtPreco.setForeground(new java.awt.Color(255, 255, 255));
+        txtPreco.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
                 txtPrecoActionPerformed(evt);
             }
         });
 
-        jLabel12.setBackground(new Color(21, 22, 27));
-        jLabel12.setFont(new Font("Liberation Sans", 1, 15)); // NOI18N
-        jLabel12.setForeground(new Color(255, 255, 255));
+        jLabel12.setBackground(new java.awt.Color(21, 22, 27));
+        jLabel12.setFont(new java.awt.Font("Liberation Sans", 1, 15)); // NOI18N
+        jLabel12.setForeground(new java.awt.Color(255, 255, 255));
         jLabel12.setText("DESCRICAO");
 
-        txtDescricao.setBackground(new Color(22, 21, 27));
-        txtDescricao.setForeground(new Color(255, 255, 255));
-        txtDescricao.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent evt) {
+        txtDescricao.setBackground(new java.awt.Color(22, 21, 27));
+        txtDescricao.setForeground(new java.awt.Color(255, 255, 255));
+        txtDescricao.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
                 txtDescricaoActionPerformed(evt);
             }
         });
 
-        jLabel9.setBackground(new Color(21, 22, 27));
-        jLabel9.setFont(new Font("Liberation Sans", 1, 15)); // NOI18N
-        jLabel9.setForeground(new Color(255, 255, 255));
+        jLabel9.setBackground(new java.awt.Color(21, 22, 27));
+        jLabel9.setFont(new java.awt.Font("Liberation Sans", 1, 15)); // NOI18N
+        jLabel9.setForeground(new java.awt.Color(255, 255, 255));
         jLabel9.setText("MODELO");
 
-        txtModelo1.setBackground(new Color(22, 21, 27));
-        txtModelo1.setForeground(new Color(255, 255, 255));
-        txtModelo1.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent evt) {
+        txtModelo1.setBackground(new java.awt.Color(22, 21, 27));
+        txtModelo1.setForeground(new java.awt.Color(255, 255, 255));
+        txtModelo1.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
                 txtModelo1ActionPerformed(evt);
             }
         });
 
-        jLabel13.setBackground(new Color(21, 22, 27));
-        jLabel13.setFont(new Font("Liberation Sans", 1, 15)); // NOI18N
-        jLabel13.setForeground(new Color(255, 255, 255));
+        jLabel13.setBackground(new java.awt.Color(21, 22, 27));
+        jLabel13.setFont(new java.awt.Font("Liberation Sans", 1, 15)); // NOI18N
+        jLabel13.setForeground(new java.awt.Color(255, 255, 255));
         jLabel13.setText("QUANTIDADE");
 
-        txtQuantidade.setBackground(new Color(22, 21, 27));
-        txtQuantidade.setForeground(new Color(255, 255, 255));
-        txtQuantidade.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent evt) {
+        txtQuantidade.setBackground(new java.awt.Color(22, 21, 27));
+        txtQuantidade.setForeground(new java.awt.Color(255, 255, 255));
+        txtQuantidade.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
                 txtQuantidadeActionPerformed(evt);
             }
         });
 
-        btnSalvar.setBackground(new Color(202, 207, 214));
-        btnSalvar.setForeground(new Color(4, 138, 129));
+        btnSalvar.setBackground(new java.awt.Color(202, 207, 214));
+        btnSalvar.setForeground(new java.awt.Color(4, 138, 129));
         btnSalvar.setText("SALVAR");
-        btnSalvar.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent evt) {
+        btnSalvar.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
                 btnSalvarActionPerformed(evt); // Removido 'throws SQLException'
             }
         });
 
-        GroupLayout jPanel1Layout = new GroupLayout(jPanel1);
+        javax.swing.GroupLayout jPanel1Layout = new javax.swing.GroupLayout(jPanel1);
         jPanel1.setLayout(jPanel1Layout);
         jPanel1Layout.setHorizontalGroup(
-                jPanel1Layout.createParallelGroup(GroupLayout.Alignment.LEADING)
+                jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                         .addGroup(jPanel1Layout.createSequentialGroup()
                                 .addGap(76, 76, 76)
-                                .addGroup(jPanel1Layout.createParallelGroup(GroupLayout.Alignment.LEADING)
-                                        .addComponent(btnSalvar, GroupLayout.PREFERRED_SIZE, 179, GroupLayout.PREFERRED_SIZE)
-                                        .addComponent(txtDescricao, GroupLayout.PREFERRED_SIZE, 645, GroupLayout.PREFERRED_SIZE)
+                                .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                                        .addComponent(btnSalvar, javax.swing.GroupLayout.PREFERRED_SIZE, 179, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                        .addComponent(txtDescricao, javax.swing.GroupLayout.PREFERRED_SIZE, 645, javax.swing.GroupLayout.PREFERRED_SIZE)
                                         .addComponent(jLabel12)
                                         .addGroup(jPanel1Layout.createSequentialGroup()
-                                                .addGroup(jPanel1Layout.createParallelGroup(GroupLayout.Alignment.LEADING, false)
+                                                .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
                                                         .addComponent(txtPreco)
                                                         .addComponent(jLabel10)
                                                         .addComponent(txtFornecedor)
                                                         .addComponent(jLabel11)
-                                                        .addComponent(comBoxCategoria, 0, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                                                        .addComponent(comBoxCategoria, 0, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                                                         .addComponent(jLabel4)
-                                                        .addComponent(txtMarca, GroupLayout.DEFAULT_SIZE, 209, Short.MAX_VALUE)
+                                                        .addComponent(txtMarca, javax.swing.GroupLayout.DEFAULT_SIZE, 209, Short.MAX_VALUE)
                                                         .addComponent(jLabel6)
                                                         .addComponent(txtNome)
                                                         .addComponent(jLabel5))
                                                 .addGap(232, 232, 232)
-                                                .addGroup(jPanel1Layout.createParallelGroup(GroupLayout.Alignment.LEADING)
+                                                .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                                                         .addComponent(jLabel9)
-                                                        .addComponent(txtModelo1, GroupLayout.PREFERRED_SIZE, 215, GroupLayout.PREFERRED_SIZE)
-                                                        .addGroup(jPanel1Layout.createParallelGroup(GroupLayout.Alignment.TRAILING, false)
-                                                                .addComponent(txtQuantidade, GroupLayout.Alignment.LEADING)
-                                                                .addComponent(jLabel13, GroupLayout.Alignment.LEADING, GroupLayout.DEFAULT_SIZE, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)))))
+                                                        .addComponent(txtModelo1, javax.swing.GroupLayout.PREFERRED_SIZE, 215, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                                        .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING, false)
+                                                                .addComponent(txtQuantidade, javax.swing.GroupLayout.Alignment.LEADING)
+                                                                .addComponent(jLabel13, javax.swing.GroupLayout.Alignment.LEADING, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)))))
                                 .addContainerGap(299, Short.MAX_VALUE))
         );
         jPanel1Layout.setVerticalGroup(
-                jPanel1Layout.createParallelGroup(GroupLayout.Alignment.LEADING)
+                jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                         .addGroup(jPanel1Layout.createSequentialGroup()
                                 .addGap(98, 98, 98)
-                                .addGroup(jPanel1Layout.createParallelGroup(GroupLayout.Alignment.BASELINE)
+                                .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                                         .addComponent(jLabel5)
                                         .addComponent(jLabel9))
-                                .addPreferredGap(LayoutStyle.ComponentPlacement.RELATED)
-                                .addGroup(jPanel1Layout.createParallelGroup(GroupLayout.Alignment.BASELINE)
-                                        .addComponent(txtNome, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE)
-                                        .addComponent(txtModelo1, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE))
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                                        .addComponent(txtNome, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                        .addComponent(txtModelo1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
                                 .addGap(18, 18, 18)
-                                .addGroup(jPanel1Layout.createParallelGroup(GroupLayout.Alignment.BASELINE)
+                                .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                                         .addComponent(jLabel6)
                                         .addComponent(jLabel13))
-                                .addPreferredGap(LayoutStyle.ComponentPlacement.RELATED)
-                                .addGroup(jPanel1Layout.createParallelGroup(GroupLayout.Alignment.BASELINE)
-                                        .addComponent(txtMarca, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE)
-                                        .addComponent(txtQuantidade, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE))
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                                        .addComponent(txtMarca, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                        .addComponent(txtQuantidade, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
                                 .addGap(35, 35, 35)
                                 .addComponent(jLabel4)
-                                .addPreferredGap(LayoutStyle.ComponentPlacement.RELATED)
-                                .addComponent(comBoxCategoria, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE)
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                .addComponent(comBoxCategoria, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                                 .addGap(18, 18, 18)
                                 .addComponent(jLabel11)
-                                .addPreferredGap(LayoutStyle.ComponentPlacement.RELATED)
-                                .addComponent(txtFornecedor, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE)
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                .addComponent(txtFornecedor, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                                 .addGap(18, 18, 18)
                                 .addComponent(jLabel10)
-                                .addPreferredGap(LayoutStyle.ComponentPlacement.RELATED)
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                                 .addComponent(txtPreco)
                                 .addGap(18, 18, 18)
                                 .addComponent(jLabel12)
-                                .addPreferredGap(LayoutStyle.ComponentPlacement.RELATED)
-                                .addComponent(txtDescricao, GroupLayout.PREFERRED_SIZE, GroupLayout.PREFERRED_SIZE, GroupLayout.PREFERRED_SIZE)
-                                .addPreferredGap(LayoutStyle.ComponentPlacement.RELATED, 41, Short.MAX_VALUE)
-                                .addComponent(btnSalvar, GroupLayout.PREFERRED_SIZE, 42, GroupLayout.PREFERRED_SIZE)
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                .addComponent(txtDescricao, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 41, Short.MAX_VALUE)
+                                .addComponent(btnSalvar, javax.swing.GroupLayout.PREFERRED_SIZE, 42, javax.swing.GroupLayout.PREFERRED_SIZE)
                                 .addGap(39, 39, 39))
         );
 
-        GroupLayout layout = new GroupLayout(getContentPane());
+        javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
         layout.setHorizontalGroup(
-                layout.createParallelGroup(GroupLayout.Alignment.LEADING)
+                layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                         .addGap(0, 1037, Short.MAX_VALUE)
-                        .addGroup(layout.createParallelGroup(GroupLayout.Alignment.LEADING)
+                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                                 .addGroup(layout.createSequentialGroup()
                                         .addContainerGap()
-                                        .addComponent(jPanel1, GroupLayout.DEFAULT_SIZE, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)))
+                                        .addComponent(jPanel1, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)))
         );
         layout.setVerticalGroup(
-                layout.createParallelGroup(GroupLayout.Alignment.LEADING)
+                layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                         .addGap(0, 621, Short.MAX_VALUE)
-                        .addGroup(layout.createParallelGroup(GroupLayout.Alignment.LEADING)
+                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                                 .addGroup(layout.createSequentialGroup()
                                         .addContainerGap()
-                                        .addComponent(jPanel1, GroupLayout.DEFAULT_SIZE, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)))
+                                        .addComponent(jPanel1, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)))
         );
 
         pack();
@@ -381,40 +458,43 @@ public class cadastrarProduto extends javax.swing.JDialog {
         try {
             // 1. Criar ou buscar o Instrumento
             InstrumentoDTO instrumento;
-            // Primeiro, tenta buscar o instrumento pelo nome
-            InstrumentoDTO instrumentoExistente = instrumentoImpl.buscarPorNome(nomeInstrumento);
+            // Tenta buscar o instrumento pelo nome (agora retorna Optional)
+            Optional<InstrumentoDTO> instrumentoOpt = instrumentoImpl.buscarPorNome(nomeInstrumento);
 
-            if (instrumentoExistente != null) {
-                // Se o instrumento já existe, usa ele
-                instrumento = instrumentoExistente;
+            if (instrumentoOpt.isPresent()) { // Se o instrumento já existe, usa ele
+                instrumento = instrumentoOpt.get();
                 logger.log(Level.INFO, "Usando instrumento existente: " + nomeInstrumento);
                 // Opcional: Atualizar a categoria se for diferente
                 if (!instrumento.getCategoria().name().equals(categoria)) {
                     instrumento.setCategoria(Categoria.valueOf(categoria));
-                    instrumentoImpl.atualizar(instrumento); // Assumindo que InstrumentoDAOImpl tem um método 'atualizar'
+                    instrumentoImpl.atualizar(instrumento); // Método de atualização do instrumento
                     logger.log(Level.INFO, "Categoria do instrumento atualizada para: " + categoria);
                 }
-            } else {
-                // Se o instrumento não existe, cria um novo
+            } else { // Se o instrumento não existe, cria um novo
                 instrumento = new InstrumentoDTO();
                 instrumento.setNome(nomeInstrumento);
                 instrumento.setCategoria(Categoria.valueOf(categoria));
-                instrumentoImpl.salvar(instrumento);
-                logger.log(Level.INFO, "Novo instrumento cadastrado: " + nomeInstrumento);
-
-                // IMPORTANTE: Após salvar um novo instrumento, você precisa obter o ID gerado
-                // Se seu método salvar() não retorna o DTO com o ID, você precisará buscá-lo novamente
-                // Idealmente, seu método salvar() deveria retornar o DTO completo com o ID gerado.
-                instrumento = instrumentoImpl.buscarPorNome(nomeInstrumento);
-                if (instrumento == null) {
-                    throw new SQLException("Falha ao recuperar o ID do instrumento recém-cadastrado.");
-                }
+                // Salvar o novo instrumento (deve retornar o DTO com o ID gerado)
+                instrumento = instrumentoImpl.salvar(instrumento); // InstrumentoDAO.salvar retorna InstrumentoDTO
+                logger.log(Level.INFO, "Novo instrumento cadastrado com ID: " + instrumento.getIdInstrumento() + ", Nome: " + nomeInstrumento);
             }
 
             // 2. Buscar o Fornecedor pelo nome
-            FornecedorDTO fornecedor = fornecedorImpl.buscarPorNome(nomeFornecedor);
+            // FornecedorDAO.buscarFornecedoresPorNome retorna List<FornecedorDTO>
+            List<FornecedorDTO> fornecedoresEncontrados = fornecedorImpl.buscarFornecedoresPorNome(nomeFornecedor);
+            FornecedorDTO fornecedor = null;
+            if (fornecedoresEncontrados != null && !fornecedoresEncontrados.isEmpty()) {
+                // Tenta encontrar uma correspondência exata para o nome do fornecedor para evitar ambiguidades
+                for (FornecedorDTO f : fornecedoresEncontrados) {
+                    if (f.getNomeFornecedor().equalsIgnoreCase(nomeFornecedor)) {
+                        fornecedor = f;
+                        break;
+                    }
+                }
+            }
+
             if (fornecedor == null) {
-                JOptionPane.showMessageDialog(this, "Fornecedor '" + nomeFornecedor + "' não encontrado. Por favor, cadastre o fornecedor primeiro ou insira um nome válido.", "Fornecedor Não Encontrado", JOptionPane.WARNING_MESSAGE);
+                JOptionPane.showMessageDialog(this, "Fornecedor '" + nomeFornecedor + "' não encontrado ou correspondência exata não encontrada. Por favor, cadastre o fornecedor primeiro ou insira um nome válido.", "Fornecedor Inválido", JOptionPane.WARNING_MESSAGE);
                 logger.log(Level.WARNING, "Tentativa de cadastrar produto com fornecedor inexistente: " + nomeFornecedor);
                 return;
             }
@@ -492,6 +572,7 @@ public class cadastrarProduto extends javax.swing.JDialog {
         /* Create and display the dialog */
         java.awt.EventQueue.invokeLater(new Runnable() {
             public void run() {
+                // Adicionado try-catch para lidar com SQLException do construtor
                 cadastrarProduto dialog = new cadastrarProduto(new JFrame(), true);
                 dialog.addWindowListener(new java.awt.event.WindowAdapter() {
                     @Override

@@ -1,77 +1,80 @@
 /*
  * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/GUIForms/JFrame.java to edit this template
+ * Click nbfs://nbhost/SystemFileSystem/Templates/GUIForms/JDialog.java to edit this template
  */
 package com.roncolatoandpedro.soulinstruments.ui;
 
 import com.roncolatoandpedro.soulinstruments.dao.DAOFactory;
-import com.roncolatoandpedro.soulinstruments.dao.interfaces.InstrumentoDAO; // Usar a interface InstrumentoDAO
-import com.roncolatoandpedro.soulinstruments.dao.interfaces.ProdutoDAO; // Usar a interface ProdutoDAO
-import com.roncolatoandpedro.soulinstruments.dto.Categoria; // Importar Categoria
-import com.roncolatoandpedro.soulinstruments.dto.InstrumentoDTO; // Importar InstrumentoDTO
+import com.roncolatoandpedro.soulinstruments.dao.interfaces.PedidoDAO;
+import com.roncolatoandpedro.soulinstruments.dao.interfaces.ProdutoDAO; // Para buscar nome do produto
+import com.roncolatoandpedro.soulinstruments.dto.PedidoDTO;
 import com.roncolatoandpedro.soulinstruments.dto.ProdutoDTO;
 
 import javax.swing.*;
-import javax.swing.table.DefaultTableModel; // Importar DefaultTableModel
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
+import javax.swing.table.DefaultTableModel;
+import java.awt.*;
 import java.sql.SQLException;
+import java.text.SimpleDateFormat;
+import java.util.Date; // Usar java.util.Date para consistência com PedidoDTO e JDBC
 import java.util.List;
-import java.util.Optional; // Importar Optional
+import java.util.Optional; // Importe Optional
 import java.util.Vector; // Para uso com DefaultTableModel
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
  *
- * @author pedro
+ * @author AmonA
  */
-public class estoqueGUI extends javax.swing.JFrame {
+public class consultarPedido extends javax.swing.JDialog {
 
-    private static final Logger logger = Logger.getLogger(estoqueGUI.class.getName());
+    private static final Logger logger = Logger.getLogger(consultarPedido.class.getName());
 
-    private ProdutoDAO produtoImpl; // Alterado para a interface ProdutoDAO
-    private InstrumentoDAO instrumentoImpl; // Alterado para a interface InstrumentoDAO
+    // Instâncias das DAOs
+    private PedidoDAO pedidoImpl;
+    private ProdutoDAO produtoImpl;
+
+    // Para o autocomplete de nome do cliente
+    private JList<String> listaClientes;
+    private JPopupMenu popupMenuClientes;
+
 
     /**
-     * Creates new form estoqueGUI
+     * Creates new form consultarPedido
+     * @param parent O Frame pai do diálogo.
+     * @param modal Define se o diálogo é modal (bloqueia a interação com a janela pai).
      */
-    public estoqueGUI() {
+    public consultarPedido(java.awt.Frame parent, boolean modal) {
+        super(parent, modal);
         initComponents();
+
         try {
-            // Inicializa as DAOs usando os métodos factory da DAOFactory
+            // Inicializa as DAOs usando a DAOFactory
+            this.pedidoImpl = DAOFactory.criarPedidoDAO();
             this.produtoImpl = DAOFactory.criarProdutoDAO();
-            this.instrumentoImpl = DAOFactory.criarInstrumentoDAO();
         } catch (SQLException e) {
-            logger.log(Level.SEVERE, "Erro ao inicializar DAOs para estoque: " + e.getMessage(), e);
+            logger.log(Level.SEVERE, "Erro ao inicializar DAOs para consulta de pedidos: " + e.getMessage(), e);
             JOptionPane.showMessageDialog(this,
-                    "Erro ao conectar ao banco de dados para gerenciar estoque: " + e.getMessage(),
+                    "Erro ao conectar ao banco de dados para consulta de pedidos: " + e.getMessage(),
                     "Erro de Inicialização",
                     JOptionPane.ERROR_MESSAGE);
-            // Se a conexão for crítica, fechar a aplicação ou o frame.
-            dispose();
-            // System.exit(1); // Descomente se quiser encerrar a aplicação
-            return; // Retorna para evitar NullPointerException se as DAOs não forem inicializadas
+            dispose(); // Fecha o diálogo se não conseguir inicializar as DAOs
+            return;
         }
 
-        configurarComponentesIniciais();
-        carregarProdutosNaTabela(null, null); // Carrega todos os produtos inicialmente
+        configurarTabelaPedidos();
+        configurarFiltros();
+        configurarAutoCompleteCliente();
+        carregarPedidosNaTabela(null, null); // Carrega todos os pedidos inicialmente
     }
 
-    /**
-     * Configura JComboBox e outras configurações iniciais.
-     */
-    private void configurarComponentesIniciais() {
-        // Popula o ComboBox de Categoria
-        comBoxCategoria.removeAllItems();
-        comBoxCategoria.addItem("TODAS"); // Adiciona uma opção para "Todas as Categorias"
-        for (Categoria categoria : Categoria.values()) {
-            comBoxCategoria.addItem(categoria.name());
-        }
-        comBoxCategoria.setSelectedIndex(0); // Seleciona "TODAS" por padrão
 
-        // Configura o modelo da tabela
+    private void configurarTabelaPedidos() {
         DefaultTableModel model = new DefaultTableModel(
                 new Object [][] {},
-                new String [] { "ID", "Nome", "Categoria", "Marca", "Preço", "Quantidade", "Modelo", "Descrição" }
+                new String [] { "ID Pedido", "Cliente", "ID Produto", "Nome Produto", "Quantidade", "Status", "Data do Pedido" }
         ) {
             @Override
             public boolean isCellEditable(int row, int column) {
@@ -81,24 +84,99 @@ public class estoqueGUI extends javax.swing.JFrame {
         jTable1.setModel(model);
 
         // Opcional: Ajustar largura das colunas
-        jTable1.getColumnModel().getColumn(0).setPreferredWidth(50); // ID
-        jTable1.getColumnModel().getColumn(1).setPreferredWidth(150); // Nome
-        jTable1.getColumnModel().getColumn(2).setPreferredWidth(100); // Categoria
-        jTable1.getColumnModel().getColumn(3).setPreferredWidth(100); // Marca
-        jTable1.getColumnModel().getColumn(4).setPreferredWidth(80);  // Preço
-        jTable1.getColumnModel().getColumn(5).setPreferredWidth(80);  // Quantidade
-        jTable1.getColumnModel().getColumn(6).setPreferredWidth(120); // Modelo
-        jTable1.getColumnModel().getColumn(7).setPreferredWidth(200); // Descrição
+        jTable1.getColumnModel().getColumn(0).setPreferredWidth(80);
+        jTable1.getColumnModel().getColumn(1).setPreferredWidth(150);
+        jTable1.getColumnModel().getColumn(2).setPreferredWidth(100);
+        jTable1.getColumnModel().getColumn(3).setPreferredWidth(150);
+        jTable1.getColumnModel().getColumn(4).setPreferredWidth(80);
+        jTable1.getColumnModel().getColumn(5).setPreferredWidth(100);
+        jTable1.getColumnModel().getColumn(6).setPreferredWidth(150);
     }
 
-    /**
-     * Carrega os produtos na tabela, com opção de filtro.
-     * @param nomeFiltro Nome do produto para filtrar (pode ser null para não filtrar).
-     * @param categoriaFiltro Categoria do produto para filtrar (pode ser null para não filtrar).
-     */
-    private void carregarProdutosNaTabela(String nomeFiltro, String categoriaFiltro) {
-        if (produtoImpl == null || instrumentoImpl == null) {
-            logger.log(Level.SEVERE, "DAOs não inicializadas. Não é possível carregar produtos.");
+    private void configurarFiltros() {
+        // Popula o JComboBox de Status
+        comBoxStatusFiltro.removeAllItems();
+        comBoxStatusFiltro.addItem("TODOS");
+        comBoxStatusFiltro.addItem("PENDENTE");
+        comBoxStatusFiltro.addItem("PROCESSANDO");
+        comBoxStatusFiltro.addItem("CONCLUIDO");
+        comBoxStatusFiltro.addItem("CANCELADO");
+        comBoxStatusFiltro.setSelectedIndex(0); // Seleciona "TODOS" por padrão
+    }
+
+    private void configurarAutoCompleteCliente() {
+        listaClientes = new JList<>();
+        listaClientes.setBackground(new Color(22, 21, 27));
+        listaClientes.setForeground(Color.WHITE);
+        listaClientes.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+
+        popupMenuClientes = new JPopupMenu();
+        JScrollPane scrollPane = new JScrollPane(listaClientes);
+        scrollPane.setPreferredSize(new Dimension(215, 150));
+        popupMenuClientes.add(scrollPane);
+
+        txtClienteFiltro.getDocument().addDocumentListener(new DocumentListener() {
+            @Override
+            public void insertUpdate(DocumentEvent e) { mostrarSugestoesCliente(); }
+            @Override
+            public void removeUpdate(DocumentEvent e) { mostrarSugestoesCliente(); }
+            @Override
+            public void changedUpdate(DocumentEvent e) { mostrarSugestoesCliente(); }
+        });
+
+        listaClientes.addListSelectionListener(e -> {
+            if (!e.getValueIsAdjusting()) {
+                String selecionado = listaClientes.getSelectedValue();
+                if (selecionado != null) {
+                    txtClienteFiltro.setText(selecionado);
+                    popupMenuClientes.setVisible(false);
+                }
+            }
+        });
+    }
+
+    private void mostrarSugestoesCliente() {
+        SwingUtilities.invokeLater(() -> {
+            String texto = txtClienteFiltro.getText().trim();
+
+            if (texto.isEmpty()) {
+                popupMenuClientes.setVisible(false);
+                return;
+            }
+
+            try {
+                // Usa o método da PedidoDAO para buscar nomes de clientes que correspondem ao texto
+                List<PedidoDTO> clientes = pedidoImpl.buscarPorNomeCliente(texto); // Novo método na PedidoDAOImpl
+                DefaultListModel<String> modelo = new DefaultListModel<>();
+                for (PedidoDTO cliente : clientes) {
+                    modelo.addElement(String.valueOf(cliente));
+                }
+                listaClientes.setModel(modelo);
+
+                if (modelo.isEmpty()) {
+                    popupMenuClientes.setVisible(false);
+                    return;
+                }
+
+                int altura = Math.min(modelo.getSize() * 25, 150);
+                listaClientes.setPreferredSize(new Dimension(txtClienteFiltro.getWidth(), altura));
+
+                if (!popupMenuClientes.isVisible()) {
+                    popupMenuClientes.show(txtClienteFiltro, 0, txtClienteFiltro.getHeight());
+                }
+
+            } catch (SQLException e) {
+                logger.log(Level.SEVERE, "Erro ao buscar clientes para autocomplete: " + e.getMessage(), e);
+                popupMenuClientes.setVisible(false);
+                // Não mostra JOptionPane aqui para evitar spam de popups em cada digitação
+            }
+        });
+    }
+
+
+    private void carregarPedidosNaTabela(String clienteFiltro, String statusFiltro) {
+        if (pedidoImpl == null || produtoImpl == null) {
+            logger.log(Level.SEVERE, "DAOs não inicializadas. Não é possível carregar pedidos.");
             return;
         }
 
@@ -106,57 +184,56 @@ public class estoqueGUI extends javax.swing.JFrame {
         model.setRowCount(0); // Limpa as linhas existentes
 
         try {
-            List<ProdutoDTO> produtos;
-
-            // Lógica de filtragem mais robusta
-            if (nomeFiltro != null && !nomeFiltro.isEmpty()) {
-                // Se tem nome, busca por nome (que já filtra por nome de instrumento)
-                produtos = produtoImpl.buscarPorNome(nomeFiltro);
+            List<PedidoDTO> pedidos;
+            // Aplica filtros se houver. Prioriza nome do cliente, depois status.
+            if (clienteFiltro != null && !clienteFiltro.isEmpty()) {
+                pedidos = pedidoImpl.buscarPorNomeCliente(clienteFiltro);
+            } else if (statusFiltro != null && !"TODOS".equals(statusFiltro)) {
+                pedidos = pedidoImpl.buscarPorStatus(statusFiltro);
             } else {
-                // Caso contrário, lista todos os produtos
-                produtos = produtoImpl.listarTodos();
+                pedidos = pedidoImpl.listarTodos(); // Se nenhum filtro, lista todos
             }
 
-            for (ProdutoDTO produto : produtos) {
-                // Busca o instrumento para obter Nome e Categoria, usando Optional
-                Optional<InstrumentoDTO> instrumentoOpt = instrumentoImpl.buscarPorId(produto.getIdInstrumento());
+            SimpleDateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy HH:mm");
 
-                String nomeInstrumento = "N/A";
-                String categoriaInstrumento = "N/A";
+            for (PedidoDTO pedido : pedidos) {
+                // Para exibir o nome do produto na tabela, precisamos dos itens do pedido.
+                // Como PedidoDTO agora contém uma lista de ItemPedidoDTO, podemos iterar sobre eles.
+                // IMPORTANTE: PedidoDTO tem idProduto e quantidade diretamente agora (para compatibilidade com cadastrarPedido.java)
+                // Se um PedidoDTO puder ter múltiplos ItemPedidoDTOs, a lógica abaixo precisaria ser ajustada para iterar sobre 'pedido.getItens()'.
+                // Para este exemplo, vou assumir que idProduto e quantidade no PedidoDTO representam o "item principal" do pedido,
+                // ou que cada pedido na tabela representa um único item de pedido para simplificação na GUI de consulta.
+                // Se um pedido tem múltiplos itens, você precisaria decidir como representar isso na tabela (e.g., uma linha por item, ou detalhes agregados).
 
-                if (instrumentoOpt.isPresent()) {
-                    InstrumentoDTO instrumento = instrumentoOpt.get();
-                    nomeInstrumento = instrumento.getNome();
-                    categoriaInstrumento = instrumento.getCategoria().name();
+                String nomeProduto = "N/A";
+                // Assumindo que o PedidoDTO possui idProduto e quantidade diretamente para fins de UI de cadastro simplificada
+                // Se PedidoDTO tivesse apenas List<ItemPedidoDTO> itens, a lógica seria:
+                // for (ItemPedidoDTO item : pedido.getItens()) {
+                //    Optional<ProdutoDTO> pOpt = produtoImpl.buscarPorId(item.getIdProduto());
+                //    if (pOpt.isPresent()) { nomeProduto = pOpt.get().getNome() + " (" + pOpt.get().getModelo() + ")"; break; }
+                // }
+                // Com a nova estrutura do PedidoDTO (com idProduto e quantidade), vamos usá-la.
+                Optional<ProdutoDTO> pOpt = produtoImpl.buscarPorId(pedido.getIdProduto());
+                if (pOpt.isPresent()) {
+                    ProdutoDTO produto = pOpt.get();
+                    nomeProduto = produto.getDescricao() + " (" + produto.getModelo() + ")";
                 }
 
-                // Aplica o filtro de categoria se houver e se não foi filtrado por nome específico
-                // O filtro de nome já foi aplicado pelo produtoImpl.buscarPorNome
-                boolean passaNaCategoria = (categoriaFiltro == null || "TODAS".equals(categoriaFiltro) || categoriaInstrumento.equalsIgnoreCase(categoriaFiltro));
-
-                // Se o filtro de nome estava ativo, ele já trouxe os produtos relevantes.
-                // Aqui apenas garantimos que o filtro de categoria seja aplicado sobre o resultado,
-                // caso o filtro de nome seja genérico (e.g., nomeFiltro=null) ou a busca por nome
-                // não inclua a categoria no critério.
-                if (passaNaCategoria) {
-                    Vector<Object> row = new Vector<>();
-                    row.add(produto.getIdProduto());
-                    row.add(nomeInstrumento);
-                    row.add(categoriaInstrumento);
-                    row.add(produto.getMarca());
-                    row.add(produto.getPreco());
-                    row.add(produto.getQuantidadeEstoque());
-                    row.add(produto.getModelo());
-                    row.add(produto.getDescricao());
-                    model.addRow(row);
-                }
+                Vector<Object> row = new Vector<>();
+                row.add(pedido.getIdPedido());
+                row.add(pedido.getNomeCliente()); // Campo agora no PedidoDTO
+                row.add(pedido.getIdProduto());   // Campo agora no PedidoDTO
+                row.add(nomeProduto);
+                row.add(pedido.getQuantidade());  // Campo agora no PedidoDTO
+                row.add(pedido.getStatus());      // Campo agora no PedidoDTO
+                row.add(pedido.getDataPedido() != null ? dateFormat.format(pedido.getDataPedido()) : "N/A");
+                model.addRow(row);
             }
-            logger.log(Level.INFO, "Produtos carregados na tabela com filtros: Nome='" + nomeFiltro + "', Categoria='" + categoriaFiltro + "'. Total: " + model.getRowCount());
         } catch (SQLException e) {
-            logger.log(Level.SEVERE, "Erro SQL ao carregar produtos na tabela: " + e.getMessage(), e);
-            JOptionPane.showMessageDialog(this, "Erro ao carregar produtos: " + e.getMessage(), "Erro de Banco de Dados", JOptionPane.ERROR_MESSAGE);
+            logger.log(Level.SEVERE, "Erro SQL ao carregar pedidos na tabela: " + e.getMessage(), e);
+            JOptionPane.showMessageDialog(this, "Erro ao carregar pedidos: " + e.getMessage(), "Erro de Banco de Dados", JOptionPane.ERROR_MESSAGE);
         } catch (Exception e) {
-            logger.log(Level.SEVERE, "Ocorreu um erro inesperado ao carregar produtos: " + e.getMessage(), e);
+            logger.log(Level.SEVERE, "Ocorreu um erro inesperado ao carregar pedidos: " + e.getMessage(), e);
             JOptionPane.showMessageDialog(this, "Ocorreu um erro inesperado: " + e.getMessage(), "Erro", JOptionPane.ERROR_MESSAGE);
         }
     }
@@ -171,7 +248,6 @@ public class estoqueGUI extends javax.swing.JFrame {
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
     private void initComponents() {
 
-        jTextField1 = new javax.swing.JTextField();
         jPanel1 = new javax.swing.JPanel();
         jPanel4 = new javax.swing.JPanel();
         jLabel1 = new javax.swing.JLabel();
@@ -181,16 +257,13 @@ public class estoqueGUI extends javax.swing.JFrame {
         btnEntradaSaida = new javax.swing.JButton();
         jScrollPane1 = new javax.swing.JScrollPane();
         jTable1 = new javax.swing.JTable();
-        txtNome = new javax.swing.JTextField();
+        txtClienteFiltro = new javax.swing.JTextField();
         jLabel2 = new javax.swing.JLabel();
-        comBoxCategoria = new javax.swing.JComboBox<>();
+        comBoxStatusFiltro = new javax.swing.JComboBox<>();
         jLabel3 = new javax.swing.JLabel();
         btnBuscar = new javax.swing.JButton();
-        jPanel2 = new javax.swing.JPanel();
 
-        jTextField1.setText("jTextField1");
-
-        setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
+        setDefaultCloseOperation(javax.swing.WindowConstants.DISPOSE_ON_CLOSE);
 
         jPanel1.setBackground(new java.awt.Color(46, 52, 59));
 
@@ -275,77 +348,38 @@ public class estoqueGUI extends javax.swing.JFrame {
                         {null, null, null, null, null, null},
                         {null, null, null, null, null, null},
                         {null, null, null, null, null, null},
-                        {null, null, null, null, null, null},
-                        {null, null, null, null, null, null},
-                        {null, null, null, null, null, null},
-                        {null, null, null, null, null, null},
-                        {null, null, null, null, null, null},
-                        {null, null, null, null, null, null},
-                        {null, null, null, null, null, null},
-                        {null, null, null, null, null, null},
-                        {null, null, null, null, null, null},
-                        {null, null, null, null, null, null},
-                        {null, null, null, null, null, null},
-                        {null, null, null, null, null, null},
-                        {null, null, null, null, null, null},
-                        {null, null, null, null, null, null},
-                        {null, null, null, null, null, null},
-                        {null, null, null, null, null, null},
-                        {null, null, null, null, null, null},
-                        {null, null, null, null, null, null},
-                        {null, null, null, null, null, null},
-                        {null, null, null, null, null, null},
-                        {null, null, null, null, null, null},
-                        {null, null, null, null, null, null},
-                        {null, null, null, null, null, null},
-                        {null, null, null, null, null, null},
-                        {null, null, null, null, null, null},
-                        {null, null, null, null, null, null},
-                        {null, null, null, null, null, null},
-                        {null, null, null, null, null, null},
-                        {null, null, null, null, null, null},
-                        {null, null, null, null, null, null},
-                        {null, null, null, null, null, null},
-                        {null, null, null, null, null, null},
-                        {null, null, null, null, null, null},
-                        {null, null, null, null, null, null},
-                        {null, null, null, null, null, null},
-                        {null, null, null, null, null, null},
                         {null, null, null, null, null, null}
                 },
                 new String [] {
-                        "ID", "Nome", "Categoria", "Marca", "Preço", "Quantidade"
+                        "Title 1", "Title 2", "Title 3", "Title 4"
                 }
         ));
         jScrollPane1.setViewportView(jTable1);
-        if (jTable1.getColumnModel().getColumnCount() > 0) {
-            jTable1.getColumnModel().getColumn(5).setResizable(false);
-        }
 
-        txtNome.setBackground(new java.awt.Color(22, 21, 27));
-        txtNome.setForeground(new java.awt.Color(255, 255, 255));
+        txtClienteFiltro.setBackground(new java.awt.Color(22, 21, 27));
+        txtClienteFiltro.setForeground(new java.awt.Color(255, 255, 255));
 
         jLabel2.setBackground(new java.awt.Color(21, 22, 27));
         jLabel2.setFont(new java.awt.Font("Liberation Sans", 1, 15)); // NOI18N
         jLabel2.setForeground(new java.awt.Color(255, 255, 255));
-        jLabel2.setText("NOME");
+        jLabel2.setText("FILTRAR POR CLIENTE:");
 
-        comBoxCategoria.setBackground(new java.awt.Color(21, 22, 27));
-        comBoxCategoria.setForeground(new java.awt.Color(255, 255, 255));
-        comBoxCategoria.setModel(new javax.swing.DefaultComboBoxModel<>(new String[] { "SOPRO", "CORDAS", "PERCUSSAO", "ELETRONICO" }));
-        comBoxCategoria.addActionListener(new java.awt.event.ActionListener() {
+        comBoxStatusFiltro.setBackground(new java.awt.Color(21, 22, 27));
+        comBoxStatusFiltro.setForeground(new java.awt.Color(255, 255, 255));
+        comBoxStatusFiltro.setModel(new javax.swing.DefaultComboBoxModel<>(new String[] { "Item 1", "Item 2", "Item 3", "Item 4" }));
+        comBoxStatusFiltro.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                comBoxCategoriaActionPerformed(evt);
+                comBoxStatusFiltroActionPerformed(evt);
             }
         });
 
         jLabel3.setBackground(new java.awt.Color(21, 22, 27));
         jLabel3.setFont(new java.awt.Font("Liberation Sans", 1, 15)); // NOI18N
         jLabel3.setForeground(new java.awt.Color(255, 255, 255));
-        jLabel3.setText("CATEGORIA");
+        jLabel3.setText("FILTRAR POR STATUS:");
 
-        btnBuscar.setBackground(new java.awt.Color(4, 138, 129)); // Alterado cor de fundo para teal
-        btnBuscar.setForeground(new java.awt.Color(255, 255, 255)); // Alterado cor da fonte para branco
+        btnBuscar.setBackground(new java.awt.Color(4, 138, 129));
+        btnBuscar.setForeground(new java.awt.Color(255, 255, 255));
         btnBuscar.setText("BUSCAR");
         btnBuscar.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
@@ -363,15 +397,15 @@ public class estoqueGUI extends javax.swing.JFrame {
                                 .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                                         .addGroup(jPanel1Layout.createSequentialGroup()
                                                 .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                                                        .addComponent(txtNome, javax.swing.GroupLayout.PREFERRED_SIZE, 444, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                                        .addComponent(jLabel2, javax.swing.GroupLayout.PREFERRED_SIZE, 103, javax.swing.GroupLayout.PREFERRED_SIZE))
+                                                        .addComponent(txtClienteFiltro, javax.swing.GroupLayout.PREFERRED_SIZE, 444, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                                        .addComponent(jLabel2, javax.swing.GroupLayout.PREFERRED_SIZE, 180, javax.swing.GroupLayout.PREFERRED_SIZE))
                                                 .addGap(115, 115, 115)
                                                 .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                                                        .addComponent(jLabel3, javax.swing.GroupLayout.PREFERRED_SIZE, 103, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                                        .addComponent(jLabel3, javax.swing.GroupLayout.PREFERRED_SIZE, 180, javax.swing.GroupLayout.PREFERRED_SIZE)
                                                         .addGroup(jPanel1Layout.createSequentialGroup()
-                                                                .addComponent(comBoxCategoria, javax.swing.GroupLayout.PREFERRED_SIZE, 353, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                                                .addComponent(comBoxStatusFiltro, javax.swing.GroupLayout.PREFERRED_SIZE, 353, javax.swing.GroupLayout.PREFERRED_SIZE)
                                                                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                                                                .addComponent(btnBuscar, javax.swing.GroupLayout.PREFERRED_SIZE, 120, javax.swing.GroupLayout.PREFERRED_SIZE) // Tamanho ajustado
+                                                                .addComponent(btnBuscar, javax.swing.GroupLayout.PREFERRED_SIZE, 120, javax.swing.GroupLayout.PREFERRED_SIZE)
                                                                 .addGap(139, 139, 139))))
                                         .addGroup(jPanel1Layout.createSequentialGroup()
                                                 .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 1236, javax.swing.GroupLayout.PREFERRED_SIZE)
@@ -387,44 +421,33 @@ public class estoqueGUI extends javax.swing.JFrame {
                                         .addComponent(jLabel3, javax.swing.GroupLayout.PREFERRED_SIZE, 33, javax.swing.GroupLayout.PREFERRED_SIZE))
                                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                                 .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                                        .addComponent(txtNome, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                        .addComponent(comBoxCategoria, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                        .addComponent(txtClienteFiltro, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                        .addComponent(comBoxStatusFiltro, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                                         .addComponent(btnBuscar))
                                 .addGap(18, 18, 18)
                                 .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 462, javax.swing.GroupLayout.PREFERRED_SIZE)
                                 .addGap(61, 61, 61))
         );
 
-        javax.swing.GroupLayout jPanel2Layout = new javax.swing.GroupLayout(jPanel2);
-        jPanel2.setLayout(jPanel2Layout);
-        jPanel2Layout.setHorizontalGroup(
-                jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                        .addGap(0, 100, Short.MAX_VALUE)
-        );
-        jPanel2Layout.setVerticalGroup(
-                jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                        .addGap(0, 100, Short.MAX_VALUE)
-        );
-
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
         layout.setHorizontalGroup(
                 layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                        .addGroup(layout.createSequentialGroup()
-                                .addGap(1192, 1192, 1192)
-                                .addComponent(jPanel2, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
-                        .addGroup(layout.createSequentialGroup()
-                                .addComponent(jPanel1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                .addGap(0, 209, Short.MAX_VALUE))
+                        .addGap(0, 1290, Short.MAX_VALUE)
+                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                                .addGroup(layout.createSequentialGroup()
+                                        .addContainerGap()
+                                        .addComponent(jPanel1, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                                        .addContainerGap()))
         );
         layout.setVerticalGroup(
                 layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                        .addGroup(layout.createSequentialGroup()
-                                .addComponent(jPanel1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                                .addComponent(jPanel2, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                        .addGap(0, 725, Short.MAX_VALUE)
+                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                                .addGroup(layout.createSequentialGroup()
+                                        .addContainerGap()
+                                        .addComponent(jPanel1, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                                        .addContainerGap()))
         );
 
         pack();
@@ -436,8 +459,8 @@ public class estoqueGUI extends javax.swing.JFrame {
     }//GEN-LAST:event_btnHomeActionPerformed
 
     private void btnEstoqueActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnEstoqueActionPerformed
-        // Já está na tela de estoque, não precisa abrir uma nova.
-        logger.log(Level.INFO, "Já está na tela de Estoque.");
+        this.dispose(); // Fecha a janela atual
+        java.awt.EventQueue.invokeLater(() -> new estoqueGUI().setVisible(true));
     }//GEN-LAST:event_btnEstoqueActionPerformed
 
     private void btnAtualizarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnAtualizarActionPerformed
@@ -457,26 +480,26 @@ public class estoqueGUI extends javax.swing.JFrame {
         java.awt.EventQueue.invokeLater(() -> new entradaSaidaGUI().setVisible(true));
     }//GEN-LAST:event_btnEntradaSaidaActionPerformed
 
-    private void comBoxCategoriaActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_comBoxCategoriaActionPerformed
-        // Quando a categoria muda, atualiza a tabela com o filtro
+    private void comBoxStatusFiltroActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_comBoxStatusFiltroActionPerformed
+        // Quando o status muda, atualiza a tabela com o filtro
         btnBuscarActionPerformed(evt); // Chama o método de busca para aplicar o filtro
-    }//GEN-LAST:event_comBoxCategoriaActionPerformed
+    }//GEN-LAST:event_comBoxStatusFiltroActionPerformed
 
     private void btnBuscarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnBuscarActionPerformed
-        String nomeFiltro = txtNome.getText().trim();
-        String categoriaFiltro = (String) comBoxCategoria.getSelectedItem();
+        String clienteFiltro = txtClienteFiltro.getText().trim();
+        String statusFiltro = (String) comBoxStatusFiltro.getSelectedItem();
 
-        // Se o campo de nome estiver vazio, passa null para o filtro de nome
-        if (nomeFiltro.isEmpty()) {
-            nomeFiltro = null;
+        // Se o campo de cliente estiver vazio, passa null para o filtro de cliente
+        if (clienteFiltro.isEmpty()) {
+            clienteFiltro = null;
         }
 
-        // Se "TODAS" for selecionado na categoria, passa null para o filtro de categoria
-        if ("TODAS".equals(categoriaFiltro)) {
-            categoriaFiltro = null;
+        // Se "TODOS" for selecionado no status, passa null para o filtro de status
+        if ("TODOS".equals(statusFiltro)) {
+            statusFiltro = null;
         }
 
-        carregarProdutosNaTabela(nomeFiltro, categoriaFiltro);
+        carregarPedidosNaTabela(clienteFiltro, statusFiltro);
     }//GEN-LAST:event_btnBuscarActionPerformed
 
     /**
@@ -496,26 +519,20 @@ public class estoqueGUI extends javax.swing.JFrame {
                 }
             }
         } catch (ClassNotFoundException ex) {
-            java.util.logging.Logger.getLogger(estoqueGUI.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
+            java.util.logging.Logger.getLogger(consultarPedido.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
         } catch (InstantiationException ex) {
-            java.util.logging.Logger.getLogger(estoqueGUI.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
+            java.util.logging.Logger.getLogger(consultarPedido.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
         } catch (IllegalAccessException ex) {
-            java.util.logging.Logger.getLogger(estoqueGUI.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
+            java.util.logging.Logger.getLogger(consultarPedido.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
         } catch (javax.swing.UnsupportedLookAndFeelException ex) {
-            java.util.logging.Logger.getLogger(estoqueGUI.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
+            java.util.logging.Logger.getLogger(consultarPedido.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
         }
         //</editor-fold>
 
-        /* Create and display the form */
+        /* Create and display the dialog */
         java.awt.EventQueue.invokeLater(new Runnable() {
             public void run() {
-                try {
-                    new estoqueGUI().setVisible(true);
-                } catch (Exception e) { // Captura qualquer exceção durante a inicialização
-                    logger.log(Level.SEVERE, "Erro crítico ao iniciar a tela de estoque: " + e.getMessage(), e);
-                    JOptionPane.showMessageDialog(null, "Erro crítico ao iniciar a tela de estoque: " + e.getMessage(), "Erro de Inicialização", JOptionPane.ERROR_MESSAGE);
-                    System.exit(1); // Encerra a aplicação
-                }
+                new consultarPedido(new JFrame(), true).setVisible(true);
             }
         });
     }
@@ -526,16 +543,14 @@ public class estoqueGUI extends javax.swing.JFrame {
     private javax.swing.JButton btnEntradaSaida;
     private javax.swing.JButton btnEstoque;
     private javax.swing.JButton btnHome;
-    private javax.swing.JComboBox<String> comBoxCategoria;
+    private javax.swing.JComboBox<String> comBoxStatusFiltro;
     private javax.swing.JLabel jLabel1;
     private javax.swing.JLabel jLabel2;
     private javax.swing.JLabel jLabel3;
     private javax.swing.JPanel jPanel1;
-    private javax.swing.JPanel jPanel2;
     private javax.swing.JPanel jPanel4;
     private javax.swing.JScrollPane jScrollPane1;
     private javax.swing.JTable jTable1;
-    private javax.swing.JTextField jTextField1;
-    private javax.swing.JTextField txtNome;
+    private javax.swing.JTextField txtClienteFiltro;
     // End of variables declaration//GEN-END:variables
 }

@@ -4,12 +4,10 @@
  */
 package com.roncolatoandpedro.soulinstruments.ui;
 
-import com.roncolatoandpedro.soulinstruments.controller.FornecedorController; // Importe se FornecedorController for usado
 import com.roncolatoandpedro.soulinstruments.dao.DAOFactory;
-import com.roncolatoandpedro.soulinstruments.dao.impl.FornecedorDAOImpl;
-import com.roncolatoandpedro.soulinstruments.dao.impl.InstrumentoDAOImpl;
-import com.roncolatoandpedro.soulinstruments.dao.impl.ProdutoDAOImpl;
-import com.roncolatoandpedro.soulinstruments.dao.interfaces.FornecedorDAO; // Importe se FornecedorDAO for usado
+import com.roncolatoandpedro.soulinstruments.dao.interfaces.FornecedorDAO; // Usar a interface
+import com.roncolatoandpedro.soulinstruments.dao.interfaces.InstrumentoDAO; // Usar a interface
+import com.roncolatoandpedro.soulinstruments.dao.interfaces.ProdutoDAO; // Usar a interface
 import com.roncolatoandpedro.soulinstruments.dto.FornecedorDTO;
 import com.roncolatoandpedro.soulinstruments.dto.InstrumentoDTO;
 import com.roncolatoandpedro.soulinstruments.dto.ProdutoDTO;
@@ -20,8 +18,9 @@ import javax.swing.event.DocumentListener;
 import java.awt.*;
 import java.sql.SQLException;
 import java.util.List;
-import java.util.Optional;
-import java.util.logging.Level; // Importe Level para uso com logger
+import java.util.Optional; // Importe Optional
+import java.util.logging.Level;
+import java.util.logging.Logger; // Importe Logger
 
 /**
  *
@@ -29,22 +28,22 @@ import java.util.logging.Level; // Importe Level para uso com logger
  */
 public class atualizarGUI extends javax.swing.JFrame {
 
-    private static final java.util.logging.Logger logger = java.util.logging.Logger.getLogger(atualizarGUI.class.getName());
-    private final FornecedorDAOImpl fornecedorDao;
+    private static final Logger logger = Logger.getLogger(atualizarGUI.class.getName()); // Usar Logger
+
+    // As DAOs devem ser do tipo da interface, e injetadas via DAOFactory
+    private final FornecedorDAO fornecedorDao; // Para o autocomplete
+    private final ProdutoDAO produtoImpl;
+    private final InstrumentoDAO instrumentoImpl;
+    private final FornecedorDAO fornecedorImpl; // Para buscar o fornecedor no salvar/buscar produto
+
     private JList<FornecedorDTO> listaFornecedores;
 
-    // Inicialize essas instâncias no construtor para evitar NullPointerExceptions
-    private ProdutoDAOImpl produtoImpl;
-    private InstrumentoDAOImpl instrumentoImpl;
-    private FornecedorDAOImpl fornecedorImpl;
-
     public atualizarGUI() throws SQLException {
-        // Inicializa as DAOs usando a fábrica de conexões
-        // Garanta que DAOFactory.getConexao() retorne uma conexão válida
-        this.fornecedorDao = new FornecedorDAOImpl(DAOFactory.getConexao());
-        this.produtoImpl = new ProdutoDAOImpl(DAOFactory.getConexao());
-        this.instrumentoImpl = new InstrumentoDAOImpl(DAOFactory.getConexao());
-        this.fornecedorImpl = new FornecedorDAOImpl(DAOFactory.getConexao()); // Pode ser o mesmo fornecedorDao se desejar uma única instância
+        // Inicializa as DAOs usando a DAOFactory, que garante a conexão e as dependências
+        this.fornecedorDao = DAOFactory.criarFornecedorDAO(); // Para o autocomplete
+        this.produtoImpl = DAOFactory.criarProdutoDAO();
+        this.instrumentoImpl = DAOFactory.criarInstrumentoDAO(); // Adicionado InstrumentoDAO
+        this.fornecedorImpl = DAOFactory.criarFornecedorDAO(); // Pode ser a mesma instância que fornecedorDao se desejar
 
         initComponents();
         configurarAutoComplete();
@@ -96,33 +95,39 @@ public class atualizarGUI extends javax.swing.JFrame {
                 return;
             }
 
-            // Buscar fornecedores que correspondem ao texto
-            List<FornecedorDTO> fornecedores = fornecedorDao.buscarFornecedoresPorNome(texto);
-            DefaultListModel<FornecedorDTO> modelo = new DefaultListModel<>();
+            try { // Adicionado try-catch, pois FornecedorDAO.buscarFornecedoresPorNome lança SQLException
+                // Buscar fornecedores que correspondem ao texto
+                List<FornecedorDTO> fornecedores = fornecedorDao.buscarFornecedoresPorNome(texto);
+                DefaultListModel<FornecedorDTO> modelo = new DefaultListModel<>();
 
-            for (FornecedorDTO fornecedor : fornecedores) {
-                modelo.addElement(fornecedor);
-            }
+                for (FornecedorDTO fornecedor : fornecedores) {
+                    modelo.addElement(fornecedor);
+                }
 
-            listaFornecedores.setModel(modelo);
+                listaFornecedores.setModel(modelo);
 
-            if (modelo.isEmpty()) {
+                if (modelo.isEmpty()) {
+                    jPopupMenu1.setVisible(false);
+                    return;
+                }
+
+                // Ajustar tamanho do popup baseado no número de itens
+                int altura = Math.min(modelo.getSize() * 25, 150);
+                listaFornecedores.setPreferredSize(new Dimension(
+                        txtFornecedor.getWidth(),
+                        altura
+                ));
+
+                // Mostrar popup se não estiver visível
+                if (!jPopupMenu1.isVisible()) {
+                    jPopupMenu1.show(txtFornecedor, 0, txtFornecedor.getHeight());
+                }
+
+            } catch (SQLException e) { // Captura SQLException
+                logger.log(Level.SEVERE, "Erro ao buscar fornecedores para autocomplete: " + e.getMessage(), e);
                 jPopupMenu1.setVisible(false);
-                return;
+                JOptionPane.showMessageDialog(this, "Erro ao buscar fornecedores: " + e.getMessage(), "Erro", JOptionPane.ERROR_MESSAGE);
             }
-
-            // Ajustar tamanho do popup baseado no número de itens
-            int altura = Math.min(modelo.getSize() * 25, 150);
-            listaFornecedores.setPreferredSize(new Dimension(
-                    txtFornecedor.getWidth(),
-                    altura
-            ));
-
-            // Mostrar popup se não estiver visível
-            if (!jPopupMenu1.isVisible()) {
-                jPopupMenu1.show(txtFornecedor, 0, txtFornecedor.getHeight());
-            }
-
         });
     }
 
@@ -598,20 +603,23 @@ public class atualizarGUI extends javax.swing.JFrame {
 
         try {
             Long id = Long.parseLong(idText);
-            ProdutoDTO produto = produtoImpl.buscarPorId(id);
+            // Busca o produto usando Optional
+            Optional<ProdutoDTO> produtoOpt = produtoImpl.buscarPorId(id);
 
-            if (produto != null) {
-                // Busca o instrumento e fornecedor associados ao produto
-                InstrumentoDTO instrumento = instrumentoImpl.buscarPorId(produto.getIdInstrumento());
-                FornecedorDTO fornecedor = fornecedorImpl.buscarPorId(produto.getIdFornecedor());
+            if (produtoOpt.isPresent()) {
+                ProdutoDTO produto = produtoOpt.get();
+                // Busca o instrumento usando Optional
+                Optional<InstrumentoDTO> instrumentoOpt = instrumentoImpl.buscarPorId(produto.getIdInstrumento());
+                // Busca o fornecedor usando Optional
+                Optional<FornecedorDTO> fornecedorOpt = fornecedorImpl.buscarPorId(produto.getIdFornecedor());
 
                 // Preenche os campos da GUI
-                txtNome.setText(instrumento != null ? instrumento.getNome() : "");
-                comBoxCategoria.setSelectedItem(instrumento != null ? instrumento.getCategoria() : "SOPRO"); // Default se não encontrado
+                txtNome.setText(instrumentoOpt.isPresent() ? instrumentoOpt.get().getNome() : "");
+                comBoxCategoria.setSelectedItem(instrumentoOpt.isPresent() ? instrumentoOpt.get().getCategoria().name() : "SOPRO"); // Default se não encontrado
                 txtModelo1.setText(produto.getModelo());
                 txtQuantidade.setText(String.valueOf(produto.getQuantidadeEstoque()));
                 txtMarca2.setText(produto.getMarca());
-                txtFornecedor.setText(fornecedor != null ? fornecedor.getNomeFornecedor() : ""); // Preenche com nome do fornecedor
+                txtFornecedor.setText(fornecedorOpt.isPresent() ? fornecedorOpt.get().getNomeFornecedor() : ""); // Preenche com nome do fornecedor
                 txtPreco.setText(String.valueOf(produto.getPreco()));
                 txtDescricao.setText(produto.getDescricao());
 
@@ -643,12 +651,13 @@ public class atualizarGUI extends javax.swing.JFrame {
 
         try {
             Long id = Long.parseLong(idText);
-            ProdutoDTO produto = produtoImpl.buscarPorId(id);
+            Optional<ProdutoDTO> produtoOpt = produtoImpl.buscarPorId(id); // Usa Optional
 
-            if (produto == null) {
+            if (produtoOpt.isEmpty()) { // Verifica se o produto existe
                 JOptionPane.showMessageDialog(this, "Produto com ID " + id + " não encontrado para atualização. Por favor, busque o produto primeiro.", "Produto Não Encontrado", JOptionPane.WARNING_MESSAGE);
                 return;
             }
+            ProdutoDTO produto = produtoOpt.get(); // Obtém o produto do Optional
 
             // Validações de entrada de dados
             if (txtNome.getText().isEmpty() || txtModelo1.getText().isEmpty() ||
@@ -659,12 +668,23 @@ public class atualizarGUI extends javax.swing.JFrame {
                 return;
             }
 
-            // Busca fornecedor pelo nome
+            // Busca fornecedor pelo nome. FornecedorDAO.buscarFornecedoresPorNome retorna List<FornecedorDTO>
             String nomeFornecedor = txtFornecedor.getText();
-            FornecedorDTO fornecedor = fornecedorImpl.buscarPorNome(nomeFornecedor);
+            List<FornecedorDTO> fornecedoresEncontrados = fornecedorImpl.buscarFornecedoresPorNome(nomeFornecedor);
+
+            FornecedorDTO fornecedor = null;
+            if (fornecedoresEncontrados != null && !fornecedoresEncontrados.isEmpty()) {
+                // Tenta encontrar uma correspondência exata para o nome do fornecedor para evitar ambiguidades
+                for (FornecedorDTO f : fornecedoresEncontrados) {
+                    if (f.getNomeFornecedor().equalsIgnoreCase(nomeFornecedor)) {
+                        fornecedor = f;
+                        break;
+                    }
+                }
+            }
 
             if (fornecedor == null) {
-                JOptionPane.showMessageDialog(this, "Fornecedor '" + nomeFornecedor + "' não encontrado. Por favor, selecione um fornecedor válido ou adicione-o.", "Fornecedor Inválido", JOptionPane.WARNING_MESSAGE);
+                JOptionPane.showMessageDialog(this, "Fornecedor '" + nomeFornecedor + "' não encontrado ou correspondência exata não encontrada. Por favor, selecione um fornecedor válido ou adicione-o.", "Fornecedor Inválido", JOptionPane.WARNING_MESSAGE);
                 return;
             }
 
@@ -678,19 +698,16 @@ public class atualizarGUI extends javax.swing.JFrame {
 
             // Buscar Instrumento pelo nome e atualizar o idInstrumento no ProdutoDTO
             String nomeInstrumento = txtNome.getText();
-            InstrumentoDTO instrumento = instrumentoImpl.buscarPorNome(nomeInstrumento);
+            Optional<InstrumentoDTO> instrumentoOpt = instrumentoImpl.buscarPorNome(nomeInstrumento); // Usa Optional
 
-            if (instrumento == null) {
-                // Se o instrumento com o nome fornecido não existe,
-                // você pode optar por:
-                // 1. Alertar o usuário e impedir a atualização.
-                // 2. Criar um novo instrumento (se essa for a lógica de negócio).
+            if (instrumentoOpt.isEmpty()) { // Verifica se o instrumento existe
                 JOptionPane.showMessageDialog(this, "Instrumento '" + nomeInstrumento + "' não encontrado. Por favor, insira um nome de instrumento existente.", "Instrumento Inválido", JOptionPane.WARNING_MESSAGE);
                 return;
             }
+            InstrumentoDTO instrumento = instrumentoOpt.get(); // Obtém o instrumento do Optional
+
             // Atualiza o ID do instrumento no DTO do produto
             produto.setIdInstrumento(instrumento.getIdInstrumento());
-
 
             // Realiza a atualização no banco de dados
             produtoImpl.atualizar(produto);

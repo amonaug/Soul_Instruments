@@ -4,16 +4,14 @@
  */
 package com.roncolatoandpedro.soulinstruments.ui;
 
-import com.roncolatoandpedro.soulinstruments.dao.DAOFactory; // Importe DAOFactory
-import com.roncolatoandpedro.soulinstruments.dao.impl.FornecedorDAOImpl;
+import com.roncolatoandpedro.soulinstruments.dao.DAOFactory;
+import com.roncolatoandpedro.soulinstruments.dao.interfaces.FornecedorDAO; // Importado a interface, não a implementação direta
 import com.roncolatoandpedro.soulinstruments.dto.FornecedorDTO;
 
 import javax.swing.*;
-import java.sql.Connection; // Importe Connection
-import java.sql.SQLException;
-import java.util.Objects; // Não usado neste código, pode ser removido se não houver uso futuro.
-import java.util.logging.Level; // Importe Level para uso com logger
-import java.util.logging.Logger; // Importe Logger
+import java.sql.SQLException; // Importe SQLException
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  *
@@ -23,8 +21,8 @@ public class cadastrarFornecedor extends javax.swing.JDialog {
 
     private static final Logger logger = Logger.getLogger(cadastrarFornecedor.class.getName());
 
-    // A instância da DAO para fornecedores
-    private FornecedorDAOImpl fornecedorImpl;
+    // A instância da DAO para fornecedores, usando a interface para melhor prática
+    private FornecedorDAO fornecedorImpl;
 
     /**
      * Creates new form cadastrarFornecedor
@@ -36,20 +34,18 @@ public class cadastrarFornecedor extends javax.swing.JDialog {
         initComponents();
 
         try {
-            // Inicializa a DAO de Fornecedor usando a fábrica de conexões.
-            // É fundamental que DAOFactory.getConexao() retorne uma Connection válida.
-            Connection connection = DAOFactory.getConexao();
-            this.fornecedorImpl = new FornecedorDAOImpl(connection);
+            // Inicializa a DAO de Fornecedor usando o método factory da DAOFactory
+            this.fornecedorImpl = DAOFactory.criarFornecedorDAO();
         } catch (SQLException e) {
             // Se houver um erro ao obter a conexão ou inicializar a DAO,
             // registre o erro e informe o usuário.
-            logger.log(Level.SEVERE, "Erro ao inicializar FornecedorDAOImpl: " + e.getMessage(), e);
+            logger.log(Level.SEVERE, "Erro ao inicializar FornecedorDAO: " + e.getMessage(), e);
             JOptionPane.showMessageDialog(this,
                     "Erro ao conectar ao banco de dados para o cadastro de fornecedor: " + e.getMessage(),
                     "Erro de Inicialização",
                     JOptionPane.ERROR_MESSAGE);
-            // Opcional: Você pode querer fechar o diálogo aqui se a conexão for crítica.
-            // dispose();
+            // É crítico: se não conseguiu inicializar a DAO, pode não ser possível prosseguir.
+            // Opcional: dispose(); // Para fechar o diálogo automaticamente em caso de erro crítico
         }
     }
 
@@ -203,9 +199,9 @@ public class cadastrarFornecedor extends javax.swing.JDialog {
             return;
         }
 
-        String nome = txtNome.getText();
-        String cnpj = txtCnpj.getText();
-        String descricao = txtDescricao.getText();
+        String nome = txtNome.getText().trim(); // Usar trim() para remover espaços em branco
+        String cnpj = txtCnpj.getText().trim();
+        String descricao = txtDescricao.getText().trim();
 
         // Validação de campos vazios
         if (nome.isEmpty() || cnpj.isEmpty() || descricao.isEmpty()) {
@@ -229,7 +225,8 @@ public class cadastrarFornecedor extends javax.swing.JDialog {
 
         // Salvar no banco
         try {
-            fornecedorImpl.salvar(fornecedor);
+            fornecedorImpl.salvar(fornecedor); // A interface FornecedorDAO.salvar retorna FornecedorDTO, mas aqui é void.
+            // Se você precisa do ID gerado, use o retorno.
             JOptionPane.showMessageDialog(this, "Fornecedor cadastrado com sucesso!", "Sucesso", JOptionPane.INFORMATION_MESSAGE);
             logger.log(Level.INFO, "Fornecedor cadastrado com sucesso: " + nome);
             dispose(); // Fecha o JDialog após salvar
@@ -274,9 +271,7 @@ public class cadastrarFornecedor extends javax.swing.JDialog {
         /* Create and display the dialog */
         java.awt.EventQueue.invokeLater(new Runnable() {
             public void run() {
-                // Ao iniciar a partir do main, pode ser necessário tratar a SQLException
-                // que pode ser lançada pelo construtor de cadastrarFornecedor.
-                // Para simplificar, vou envolver em um try-catch.
+                // Adicionado try-catch para lidar com SQLException do construtor
                 cadastrarFornecedor dialog = new cadastrarFornecedor(new JFrame(), true);
                 dialog.addWindowListener(new java.awt.event.WindowAdapter() {
                     @Override

@@ -65,13 +65,13 @@ public class InstrumentoDAOImpl implements InstrumentoDAO {
 
 
     @Override
-    public InstrumentoDTO buscarPorId(Long instrumentoId) throws SQLException {
+    public Optional<InstrumentoDTO> buscarPorId(Long instrumentoId) throws SQLException {
         String sql = "SELECT * FROM Instrumento WHERE idInstrumento = ?";
         try (PreparedStatement stmt = conexao.prepareStatement(sql)) {
             stmt.setLong(1, instrumentoId);
             try (ResultSet rs = stmt.executeQuery()) {
                 if (rs.next()) {
-                    return mapearResultSet(rs);
+                    return Optional.of(mapearResultSet(rs));
                 } else {
                     return null;
                 }

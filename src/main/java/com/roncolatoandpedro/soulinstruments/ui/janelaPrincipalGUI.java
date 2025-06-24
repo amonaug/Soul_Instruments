@@ -297,12 +297,8 @@ public class janelaPrincipalGUI extends javax.swing.JFrame {
         // Ação para o botão "CONSULTAR PEDIDO"
         this.dispose(); // Fecha a janela atual
         java.awt.EventQueue.invokeLater(() -> {
-            try {
-                new consultarPedido().setVisible(true); // Abre a nova tela de consulta
-            } catch (SQLException e) {
-                logger.log(java.util.logging.Level.SEVERE, "Erro ao abrir tela de consulta de pedido: " + e.getMessage(), e);
-                JOptionPane.showMessageDialog(this, "Erro ao abrir tela de consulta de pedido: " + e.getMessage(), "Erro", JOptionPane.ERROR_MESSAGE);
-            }
+            consultarPedido dialog = new consultarPedido(this, true);
+            dialog.setVisible(true);// Abre a nova tela de consulta
         });
     }//GEN-LAST:event_btnHome5ActionPerformed
 

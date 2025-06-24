@@ -79,13 +79,13 @@ public class FornecedorDAOImpl implements FornecedorDAO {
     }
 
     @Override
-    public FornecedorDTO buscarPorId(Long id) throws SQLException {
+    public Optional<FornecedorDTO> buscarPorId(Long id) throws SQLException {
         String sql = "SELECT * FROM fornecedor WHERE id = ?";
         try (PreparedStatement stmt = conexao.prepareStatement(sql)) {
             stmt.setLong(1, id);
             try (ResultSet rs = stmt.executeQuery()) {
                 if (rs.next()) {
-                    return mapearResultSetParaFornecedorDTO(rs);
+                    return Optional.of(mapearResultSetParaFornecedorDTO(rs));
                 }
                 else {
                     return null;

@@ -2,6 +2,7 @@ package com.roncolatoandpedro.soulinstruments.dao;
 
 import com.roncolatoandpedro.soulinstruments.dao.impl.*;
 import com.roncolatoandpedro.soulinstruments.dao.interfaces.*;
+import com.roncolatoandpedro.soulinstruments.dto.ItemPedidoDTO;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -79,7 +80,12 @@ public class DAOFactory {
      * @throws SQLException Se ocorrer um erro ao obter a conexão com o banco de dados.
      */
     public static ItemPedidoDAO criarItemPedidoDAO() throws SQLException {
-        return new ItemPedidoDAOImpl(getConexao());
+        return new ItemPedidoDAOImpl(getConexao()) {
+            @Override
+            public ItemPedidoDTO salvar(ItemPedidoDTO itemPedido, Long pedidoId, ProdutoDAOImpl produtoDAO) throws SQLException {
+                return null;
+            }
+        };
     }
 
     /**
@@ -96,11 +102,28 @@ public class DAOFactory {
         // As DAOs dependentes devem compartilhar a mesma conexão para garantir transações consistentes
         // se a lógica de negócio envolver múltiplas operações de banco de dados na mesma transação.
         ProdutoDAO produtoDAO = new ProdutoDAOImpl(conexao); // Passa a conexão para a ProdutoDAO
-        ItemPedidoDAO itemPedidoDAO = new ItemPedidoDAOImpl(conexao); // Passa a conexão para a ItemPedidoDAO
+        ItemPedidoDAO itemPedidoDAO = new ItemPedidoDAOImpl(conexao) {
+            @Override
+            public ItemPedidoDTO salvar(ItemPedidoDTO itemPedido, Long pedidoId, ProdutoDAOImpl produtoDAO) throws SQLException {
+                return null;
+            }
+        }; // Passa a conexão para a ItemPedidoDAO
 
         // ATENÇÃO: Você precisa ajustar o construtor de PedidoDAOImpl para aceitar
         // Connection, ProdutoDAO e ItemPedidoDAO como parâmetros, conforme a necessidade real.
         // O exemplo abaixo assume um construtor PedidoDAOImpl(Connection conexao, ProdutoDAO produtoDAO, ItemPedidoDAO itemPedidoDAO)
         return new PedidoDAOImpl(conexao, produtoDAO, itemPedidoDAO);
+    }
+
+    public static InstrumentoDAO criarInstrumentoDAO() throws SQLException {
+        Connection conexao = getConexao(); // Obtém uma única conexão para este PedidoDAO e suas DAOs dependentes
+        // As DAOs dependentes devem compartilhar a mesma conexão para garantir transações consistentes
+        // se a lógica de negócio envolver múltiplas operações de banco de dados na mesma transação.
+        InstrumentoDAO instrumentoDAO = new InstrumentoDAOImpl(conexao); // Passa a conexão para a ProdutoDAO; // Passa a conexão para a ItemPedidoDAO
+
+        // ATENÇÃO: Você precisa ajustar o construtor de PedidoDAOImpl para aceitar
+        // Connection, ProdutoDAO e ItemPedidoDAO como parâmetros, conforme a necessidade real.
+        // O exemplo abaixo assume um construtor PedidoDAOImpl(Connection conexao, ProdutoDAO produtoDAO, ItemPedidoDAO itemPedidoDAO)
+        return new InstrumentoDAOImpl(conexao);
     }
 }

@@ -5,13 +5,13 @@
 package com.roncolatoandpedro.soulinstruments.ui;
 
 import com.roncolatoandpedro.soulinstruments.dao.DAOFactory;
-import com.roncolatoandpedro.soulinstruments.dao.impl.ProdutoDAOImpl;
+import com.roncolatoandpedro.soulinstruments.dao.interfaces.ProdutoDAO; // Usar a interface ProdutoDAO
 import com.roncolatoandpedro.soulinstruments.dto.ProdutoDTO;
 
 import javax.swing.*;
 import java.awt.*;
-import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.Optional; // Importe Optional
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -23,7 +23,7 @@ public class entradaSaidaGUI extends javax.swing.JFrame {
 
     private static final Logger logger = Logger.getLogger(entradaSaidaGUI.class.getName());
 
-    private ProdutoDAOImpl produtoImpl;
+    private ProdutoDAO produtoImpl; // Alterado para a interface ProdutoDAO
 
     /**
      * Creates new form entradaSaidaGUI
@@ -31,18 +31,18 @@ public class entradaSaidaGUI extends javax.swing.JFrame {
     public entradaSaidaGUI() {
         initComponents();
         try {
-            // Inicializa a DAO de Produto usando a fábrica de conexões
-            Connection connection = DAOFactory.getConexao();
-            this.produtoImpl = new ProdutoDAOImpl(connection);
+            // Inicializa a DAO de Produto usando o método factory da DAOFactory
+            this.produtoImpl = DAOFactory.criarProdutoDAO();
         } catch (SQLException e) {
-            logger.log(Level.SEVERE, "Erro ao inicializar ProdutoDAOImpl para entrada/saída: " + e.getMessage(), e);
+            logger.log(Level.SEVERE, "Erro ao inicializar ProdutoDAO para entrada/saída: " + e.getMessage(), e);
             JOptionPane.showMessageDialog(this,
                     "Erro ao conectar ao banco de dados para operações de estoque: " + e.getMessage(),
                     "Erro de Inicialização",
                     JOptionPane.ERROR_MESSAGE);
-            // Se a conexão for crítica, você pode querer fechar a aplicação ou o frame.
-            // dispose();
-            // System.exit(1); // Ou sair da aplicação
+            // Se a conexão for crítica, fechar o frame e sair da aplicação.
+            dispose();
+            // System.exit(1); // Descomente se quiser encerrar a aplicação
+            return; // Retorna para evitar NullPointerException se a DAO não for inicializada
         }
 
         // Popula o ComboBox de Tipo de Operação
@@ -83,6 +83,8 @@ public class entradaSaidaGUI extends javax.swing.JFrame {
         lblEstoqueAtual = new javax.swing.JLabel();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
+        setMinimumSize(new java.awt.Dimension(1000, 700)); // Definindo um tamanho mínimo maior
+        setPreferredSize(new java.awt.Dimension(1200, 800)); // Definindo um tamanho preferencial maior
 
         jPanel1.setBackground(new java.awt.Color(46, 52, 59));
 
@@ -136,7 +138,7 @@ public class entradaSaidaGUI extends javax.swing.JFrame {
                         .addGroup(jPanel4Layout.createSequentialGroup()
                                 .addContainerGap()
                                 .addComponent(jLabel1)
-                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 383, Short.MAX_VALUE)
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                                 .addComponent(btnHome)
                                 .addGap(37, 37, 37)
                                 .addComponent(btnEstoque)
@@ -365,13 +367,14 @@ public class entradaSaidaGUI extends javax.swing.JFrame {
         }
 
         try {
-            ProdutoDTO produto = produtoImpl.buscarPorId(produtoId);
+            Optional<ProdutoDTO> produtoOpt = produtoImpl.buscarPorId(produtoId); // Usa Optional
 
-            if (produto == null) {
+            if (produtoOpt.isEmpty()) { // Verifica se o produto existe
                 JOptionPane.showMessageDialog(this, "Produto com ID " + produtoId + " não encontrado.", "Produto Não Encontrado", JOptionPane.WARNING_MESSAGE);
                 logger.log(Level.WARNING, "Tentativa de operação de estoque em produto ID inexistente: " + produtoId);
                 return;
             }
+            ProdutoDTO produto = produtoOpt.get(); // Obtém o produto do Optional
 
             int estoqueAtual = produto.getQuantidadeEstoque();
             int novoEstoque = estoqueAtual;
@@ -392,7 +395,7 @@ public class entradaSaidaGUI extends javax.swing.JFrame {
             produto.setQuantidadeEstoque(novoEstoque);
             produtoImpl.atualizar(produto); // Assume que ProdutoDAOImpl tem um método 'atualizar'
 
-            JOptionPane.showMessageDialog(this, "Operação de estoque realizada com sucesso! Novo estoque para " + produto.getDescricao() + ": " + novoEstoque, "Sucesso", JOptionPane.INFORMATION_MESSAGE);
+            JOptionPane.showMessageDialog(this, "Operação de estoque realizada com sucesso! Novo estoque para " + produto.getModelo() + " (ID: " + produto.getIdProduto() + "): " + novoEstoque, "Sucesso", JOptionPane.INFORMATION_MESSAGE);
             limparCamposOperacao(); // Limpa os campos após a operação
             // Atualiza o estoque atual na label após a operação bem-sucedida
             lblEstoqueAtual.setText(String.valueOf(novoEstoque));
@@ -420,10 +423,13 @@ public class entradaSaidaGUI extends javax.swing.JFrame {
 
         try {
             Long produtoId = Long.parseLong(produtoIdText);
-            ProdutoDTO produto = produtoImpl.buscarPorId(produtoId);
+            Optional<ProdutoDTO> produtoOpt = produtoImpl.buscarPorId(produtoId); // Usa Optional
 
-            if (produto != null) {
-                lblProdutoNome.setText(produto.getDescricao() + " (" + produto.getModelo() + ")");
+            if (produtoOpt.isPresent()) {
+                ProdutoDTO produto = produtoOpt.get();
+                // Assumindo que o DTO tem getNome() ou getModelo() para exibir.
+                // Ajustado para usar modelo e marca para exibir o produto.
+                lblProdutoNome.setText(produto.getModelo() + " (" + produto.getMarca() + ")");
                 lblEstoqueAtual.setText(String.valueOf(produto.getQuantidadeEstoque()));
                 JOptionPane.showMessageDialog(this, "Produto encontrado!", "Sucesso", JOptionPane.INFORMATION_MESSAGE);
             } else {
