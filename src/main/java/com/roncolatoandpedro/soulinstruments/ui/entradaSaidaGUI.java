@@ -158,7 +158,7 @@ public class entradaSaidaGUI extends javax.swing.JFrame {
                                                 .addComponent(btnHome)
                                                 .addComponent(btnEstoque)
                                                 .addComponent(btnAtualizar)
-                                                .addComponent(btnEntradaSaida)))
+                                                .addComponent(btnEntradaSaida))) // Corrected line
                                 .addContainerGap(14, Short.MAX_VALUE))
         );
 
@@ -243,7 +243,7 @@ public class entradaSaidaGUI extends javax.swing.JFrame {
                                         .addGroup(jPanel2Layout.createSequentialGroup()
                                                 .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                                                         .addComponent(jLabel2)
-                                                        .addGroup(jPanel2Layout.createSequentialGroup()
+                                                        .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel2Layout.createSequentialGroup() // Adjusted alignment to TRAILING for button placement
                                                                 .addComponent(txtProdutoId, javax.swing.GroupLayout.PREFERRED_SIZE, 150, javax.swing.GroupLayout.PREFERRED_SIZE)
                                                                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                                                                 .addComponent(btnBuscarProduto))

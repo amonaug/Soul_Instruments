@@ -16,7 +16,7 @@ public class DAOFactory {
 
     // Considere carregar essas informações de um arquivo de configuração (e.g., .properties)
     // para facilitar a mudança em diferentes ambientes (desenvolvimento, produção).
-    private static final String DB_URL = "jdbc:postgresql://localhost:5432/SoulInstruments";
+    private static final String DB_URL = "jdbc:postgresql://localhost:543/SoulInstruments";
     private static final String DB_USER = "postgres";
     private static final String DB_PASSWORD = "sua_senha_aqui"; // ATENÇÃO: Nunca exponha senhas diretamente no código fonte em produção.
 
